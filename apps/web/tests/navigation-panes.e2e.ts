@@ -554,6 +554,8 @@ describe('web e2e: navigation & panes over a rich seeded session', () => {
       await tree.waitFor()
       await tree.getByRole('button', { name: 'Expand JSON node', exact: true }).click()
       await tree.getByRole('group').getByText('"test-model"', { exact: true }).waitFor()
+      await details.getByRole('tab', { name: 'Raw response', exact: true }).hover()
+      await details.getByRole('button', { name: 'Copy pretty JSON', exact: true }).waitFor({ state: 'hidden' })
       const snapshot = await captureStableAria(page, '[aria-label="Event details"]', scaffold.workspaceCwd)
       await compareOrRefreshGolden(fileURLToPath(new URL('./trajectory-raw-response.expected.md', import.meta.url)), snapshot, MODE)
       await details.getByRole('button', { name: 'Original text', exact: true }).click()

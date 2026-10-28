@@ -128,7 +128,9 @@ describe('direct Messages HTTP', () => {
 
   it('uses the Messages endpoint, authentication, attribution and final usage', async () => {
     const http = await endpoint()
-    const llm = adapter({ baseURL: http.url })
+    const onRequestBody = vi.fn()
+    const onResponseBody = vi.fn()
+    const llm = adapter({ baseURL: http.url }, { onRequestBody, onResponseBody })
     const response = await assemble(llm.stream(options({ model: 'deepseek-flash', sessionId: SessionId('session-test'), purpose: 'compaction' })), 'deepseek-flash')
     expect(response.message.content).toEqual([{ type: 'text', text: 'Hello 世界' }])
     expect(response.message.source).toMatchObject({
@@ -139,6 +141,12 @@ describe('direct Messages HTTP', () => {
       'user-agent': expect.stringContaining('deepseek-harness/') as string, 'x-deepseek-harness-user-id': 'test-user',
       'x-deepseek-harness-session-id': 'session-test', 'x-deepseek-harness-compact': '1',
     }, body: { thinking: { type: 'enabled' }, output_config: { effort: 'high' } } })
+    expect(onRequestBody).toHaveBeenCalledOnce()
+    expect(JSON.parse(onRequestBody.mock.calls[0]![1] as string)).toEqual(http.requests[0]!.body)
+    expect(onResponseBody).toHaveBeenCalledOnce()
+    expect(onResponseBody.mock.calls[0]![1]).toMatchObject({
+      status: 200, contentType: 'text/event-stream', body: sse(textEvents), complete: true,
+    })
     expect(llm.providerInfo('deepseek-official')).toEqual({ id: 'deepseek-official', name: 'DeepSeek' })
     expect(await llm.listModels('deepseek-official')).toEqual([])
     expect(await llm.resolveModel('deepseek-official', 'deepseek-flash')).toMatchObject({

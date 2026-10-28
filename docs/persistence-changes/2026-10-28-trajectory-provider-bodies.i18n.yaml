@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-10-28-trajectory-provider-bodies.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-10-28-trajectory-provider-bodies.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-10-28-trajectory-provider-bodies:
+  en: 85604f02ca342ba0
+  zh: 0c8e0f3b48eecd57
+/2026-10-28-trajectory-provider-bodies/summary:
+  en: 507a0229502668d2
+  zh: ad897c11744ff5d9
+/2026-10-28-trajectory-provider-bodies/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-10-28-trajectory-provider-bodies/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-10-28-trajectory-provider-bodies/compatibility:
+  en: 315b927a9e1e7ff2
+  zh: a4f03026fdf537d2
+/2026-10-28-trajectory-provider-bodies/verification:
+  en: 1a5c17fbb6e11165
+  zh: 4d1c94b4a0608f7a
+/2026-10-28-trajectory-provider-bodies/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

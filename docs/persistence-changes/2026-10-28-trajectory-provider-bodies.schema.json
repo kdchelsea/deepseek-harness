@@ -1,0 +1,24 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {"key":"event:trajectory/request","kind":"event","event":"trajectory/request","surface":false,"digest":"cb54846a57eace88b7a9d14b3a6eec16f4bcbf3ff3ecaeac4417126c1b08313a"},
+    {"key":"event:trajectory/response","kind":"event","event":"trajectory/response","surface":false,"digest":"73e821b64bb19088ea5edca918508606c8ed541d11a7b50b4387c7e3d6ee227d"}
+  ],
+  "types": [],
+  "nodes": {
+    "0657d3ca5ac4e7bf": {"kind":"primitive","type":"number"},
+    "277b61f9c6f81704": {"kind":"literal","value":"file"},
+    "27cefe3a609caf62": {"kind":"object","properties":[{"name":"content","type":"9fb620ef678d0e39","optional":false},{"name":"step","type":"0657d3ca5ac4e7bf","optional":false},{"name":"turn","type":"0657d3ca5ac4e7bf","optional":false}],"indices":[]},
+    "4cd48f3e5108bd6e": {"kind":"primitive","type":"string"},
+    "73e821b64bb19088": {"kind":"object","properties":[{"name":"data","type":"b6ca69f1a3f3725d","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"d649ec62c4d1cc07","optional":false}],"indices":[]},
+    "9fb620ef678d0e39": {"kind":"tuple","elements":[{"type":"f2da0f27c1e6add5","optional":false,"rest":false}]},
+    "aa93010d0e521ad7": {"kind":"primitive","type":"boolean"},
+    "b6ca69f1a3f3725d": {"kind":"object","properties":[{"name":"complete","type":"aa93010d0e521ad7","optional":false},{"name":"content","type":"9fb620ef678d0e39","optional":false},{"name":"contentType","type":"4cd48f3e5108bd6e","optional":false},{"name":"status","type":"0657d3ca5ac4e7bf","optional":false},{"name":"step","type":"0657d3ca5ac4e7bf","optional":false},{"name":"turn","type":"0657d3ca5ac4e7bf","optional":false}],"indices":[]},
+    "cb54846a57eace88": {"kind":"object","properties":[{"name":"data","type":"27cefe3a609caf62","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"e3995611e2f78261","optional":false}],"indices":[]},
+    "d649ec62c4d1cc07": {"kind":"literal","value":"trajectory/response"},
+    "dacf3d5f3e4ff619": {"kind":"literal","value":true},
+    "e3995611e2f78261": {"kind":"literal","value":"trajectory/request"},
+    "f19bee84bf3d2090": {"kind":"object","properties":[{"name":"attachmentId","type":"4cd48f3e5108bd6e","optional":false},{"name":"bytes","type":"0657d3ca5ac4e7bf","optional":false},{"name":"name","type":"4cd48f3e5108bd6e","optional":false}],"indices":[]},
+    "f2da0f27c1e6add5": {"kind":"object","properties":[{"name":"attachment","type":"f19bee84bf3d2090","optional":false},{"name":"type","type":"277b61f9c6f81704","optional":false}],"indices":[]}
+  }
+}

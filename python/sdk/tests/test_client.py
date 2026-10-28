@@ -238,6 +238,7 @@ for line in sys.stdin:
         print(json.dumps({"jsonrpc": "2.0", "method": "session.status", "params": {"sessionId": "main", "status": "running"}}), flush=True)
         print(json.dumps({"jsonrpc": "2.0", "id": msg["id"], "result": {"kind": "prompt", "messageId": "message-1"}}), flush=True)
         print(json.dumps({"jsonrpc": "2.0", "method": "subagent.started", "params": {"parentSessionId": "main", "childSessionId": "child"}}), flush=True)
+        print(json.dumps({"jsonrpc": "2.0", "method": "session.event", "params": {"sessionId": "main", "event": {"type": "trajectory/request", "data": {"turn": 1, "step": 1, "content": [{"type": "file", "attachment": {"attachmentId": "sha256:request", "name": "request.json", "bytes": 42}}]}}}}), flush=True)
         print(json.dumps({"jsonrpc": "2.0", "method": "session.status", "params": {"sessionId": "main", "status": "idle"}}), flush=True)
     elif method == "shutdown":
         print(json.dumps({"jsonrpc": "2.0", "id": msg["id"], "result": {}}), flush=True)
@@ -256,7 +257,9 @@ for line in sys.stdin:
             on_notification=lambda notification: seen.append(notification.method),
         )
 
-    assert seen == ["session.event", "session.status", "subagent.started", "session.status"]
+    assert seen == ["session.event", "session.status", "subagent.started", "session.event", "session.status"]
+    assert result.events[-1]["type"] == "trajectory/request"
+    assert result.events[-1]["data"]["content"][0]["attachment"]["name"] == "request.json"
     assert result.finish_reason is None
 
 

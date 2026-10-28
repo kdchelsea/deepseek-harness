@@ -1,3 +1,4 @@
+import type { LoadResponseBodies } from './response-body.ts'
 /** Trajectory view: compact summary over a turn-aware event ledger. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -28,6 +29,7 @@ import {
 import { trajectoryRecordId } from './trajectory-record.ts'
 import { TrajectorySearchIndex } from './trajectory-search-index.ts'
 import type { TrajectorySnapshot } from './trajectory-contract.ts'
+import type { LoadRequestInput } from './request-input.ts'
 import css from './views.module.css'
 
 const EMPTY_TURN_IDS: ReadonlySet<number> = new Set()
@@ -82,6 +84,10 @@ export interface TrajectoryViewInjected {
     duration: SnapshotStore<boolean>
   }
   loadOlder: () => Promise<boolean>
+  /** Load the complete historical input only when its inspector is opened. */
+  loadRequestInput: LoadRequestInput
+  /** Resolve raw provider responses from durable Session history. */
+  loadResponseBodies: LoadResponseBodies
   loadImage: MessageImageLoader
   setActualDuration: (actualDuration: boolean) => void
   watchToolResult?: WatchToolResult
@@ -132,7 +138,7 @@ function addUsage(
 }
 
 export function TrajectoryView({
-  useSession, useTrajectory, useDuration, watchToolResult, loadOlder, loadImage, setActualDuration,
+  useSession, useTrajectory, useDuration, watchToolResult, loadOlder, loadRequestInput, loadResponseBodies, loadImage, setActualDuration,
   viewRequest, completeViewRequest, renderSlot, t, jsonStringWrapping,
 }: ConvViewProps
   & Pick<PropsRenderSlots<'conversation.trajectory.images'>, 'renderSlot'>
@@ -588,6 +594,8 @@ export function TrajectoryView({
           renderSlot={renderSlot}
           loadImage={loadImage}
           requestNumbers={requestNumbers}
+          loadRequestInput={loadRequestInput}
+          loadResponseBodies={loadResponseBodies}
           turns={timelineTurns}
           streamingCells={streamingCells}
           timelineFocusIndexes={timelineFocusIndexes}

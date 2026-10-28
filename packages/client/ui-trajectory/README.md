@@ -41,6 +41,14 @@ Requests remain pending while awaiting output, streaming, or retrying. A request
 
 Thinking in the inspector uses compact Markdown at the inspector's fixed 13px size and 20px line height, independent of the content-size setting. Headings add bold weight without increasing size or line height. Assistant output keeps its regular Markdown typography.
 
+The request inspector’s Input tab loads Session history on demand and displays the latest captured provider API JSON body for the selected step, with expansion and copying. The Host plugin saves bodies as attachments and logs their references. It captures JSON published by DeepSeek and pi-ai immediately before dispatch, including provider parameters and extensions, without HTTP headers. Historical requests without capture and auxiliary requests are unavailable. Closing the tab stops further history paging.
+
+The request inspector’s Response tab shows the associated model content in recorded block order, including reasoning and tool calls, and follows live output. It reuses the loaded trajectory result, including compaction summaries; missing results show an explicit unavailable or waiting state. This view is not a raw provider HTTP response.
+
+The Raw response tab reads saved HTTP bodies before provider parsing, retaining JSON/SSE text, HTTP status, and Content-Type. Each response for the selected step appears separately in retry order. Bodies are saved when generation settles and survive reopening the Session; early termination is marked incomplete. Historical requests without capture, auxiliary requests, and unsupported transports remain unavailable. Capture retains received text in memory until settlement and increases attachment storage.
+
+Raw responses open in Structured mode: JSON uses an expandable field tree, and SSE shows complete events in order with their event names and optional IDs. Event payload trees mount only when expanded. Original text preserves the saved body, including comments, unfinished events, and non-JSON data; switching views never rewrites the attachment.
+
 ### The timing overview
 
 Streaming replies retain their known start time and TTFT. After settlement, token timestamps provide generation duration; throughput also requires recorded usage. Historical replies retain the same recorded timing. TTFT measures from the Step start to its first token, including output from an earlier retry attempt; an unloaded Step start or a stream without tokens leaves the corresponding metric unavailable.

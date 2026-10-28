@@ -238,6 +238,8 @@ export function apply(ctx: Context, config: Config): void {
   const adapter = new PiAiAdapter({
     profiles,
     resolveApiKey,
+    onRequestBody: (options, body) => ctx.parallel('llm/request-body', options, body),
+    onResponseBody: (options, body) => ctx.parallel('llm/response-body', options, body),
     auth,
     prepareHeaders: (request, headers) => ctx.waterfall('llm-pi-ai/request-headers', request, headers, () => headers),
     resolveAttachments: () => ctx.get('attachments'),

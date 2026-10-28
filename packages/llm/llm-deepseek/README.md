@@ -13,6 +13,7 @@ Provide the shared DeepSeek Messages transport, request configuration, and model
 
 `resolveAuth(connection)` returns the provider-owned authentication headers and an optional failure callback bound to that request’s credential. Messages and Files send those headers without selecting a credential mode. Upload reuse is isolated by endpoint and a hash of the authentication headers; raw credentials are not persisted.
 
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -25,11 +26,16 @@ Provide the shared DeepSeek Messages transport, request configuration, and model
 -----
 
 <a id="use-this-package"></a>
+
 ## Use this package
 
 This package exports the transport library; the provider plugins register routes with the harness LLM service. It captures connection options from Config references once per operation.
 
 The adapter accepts the LLM service's [request-only user inputs](../llm/README.md#use-this-package) alongside durable history; omitting request-only identity and attribution does not alter provider content.
+
+The adapter publishes the exact serialized chat request through `llm/request-body` after merging API extensions and resolving image representations. Each image fallback dispatch publishes its own body. HTTP headers are excluded.
+
+The adapter captures raw HTTP response bodies through `llm/response-body`, including SSE framing and HTTP error JSON. Each HTTP response is published when generation settles; early termination marks the captured prefix incomplete.
 
 ### When to choose it
 

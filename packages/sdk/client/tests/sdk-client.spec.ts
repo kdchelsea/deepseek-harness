@@ -143,6 +143,12 @@ describe('DeepSeekHarness', () => {
           },
         },
       },
+      { method: 'session.event', params: { sessionId: 'owned', event: {
+        type: 'trajectory/request', seq: 1, time: 1,
+        data: { turn: 1, step: 1, content: [{ type: 'file', attachment: {
+          attachmentId: 'sha256:request', name: 'request.json', bytes: 42,
+        } }] },
+      } } },
       { method: 'session.status', params: { sessionId: 'owned', status: 'idle' } },
     ] as HarnessNotification[]
     let closed = false
@@ -163,8 +169,8 @@ describe('DeepSeekHarness', () => {
     const result = await new HarnessSession(harness, 'owned').run([{ type: 'text', text: 'go' }])
 
     expect(result.notifications.map(notification => notification.method))
-      .toEqual(['session.event', 'session.status'])
-    expect(result.events.map(event => event.type)).toEqual(['agent/inbox/spliced'])
+      .toEqual(['session.event', 'session.event', 'session.status'])
+    expect(result.events.map(event => event.type)).toEqual(['agent/inbox/spliced', 'trajectory/request'])
     expect(closed).toBe(true)
   })
 

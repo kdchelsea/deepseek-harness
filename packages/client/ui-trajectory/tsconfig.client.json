@@ -58,6 +58,7 @@
   "include": [
     "src/client",
     "src/css-modules.d.ts",
-    "src/types.ts"
+    "src/types.ts",
+    "src/request.ts"
   ]
 }

@@ -1,0 +1,14 @@
+- complementary "Event details":
+  - separator "Resize event details"
+  - text: "Request #1 Turn 1"
+  - button "Close details"
+  - tablist "Event details":
+    - tab "Summary"
+    - tab "Input"
+    - tab "Response"
+    - tab "Raw response" [selected]
+    - tab "Options"
+    - tab "Usage"
+    - tab "Timing"
+  - tabpanel "Raw response":
+    - status: No raw response was recorded; historical responses cannot be reconstructed.

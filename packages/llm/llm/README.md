@@ -11,6 +11,7 @@ English | [中文](README.zh.md)
 
 Use `@deepseek-ai/dsh-llm` to stream model calls through configured provider adapters, discover models, and resolve model capabilities and call defaults. Callers must keep all model-visible input reconstructable from the session log. Loop-built requests arrive deep-frozen, so extensions and adapters cannot rewrite them. Each stream is one provider attempt: provider-specific translation stays with its adapter, while the optional `@deepseek-ai/dsh-llm-retry` package re-runs failed requests. Streams always end with a terminal result, so callers can handle success, failure, and cancellation consistently.
 
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -23,11 +24,16 @@ Use `@deepseek-ai/dsh-llm` to stream model calls through configured provider ada
 -----
 
 <a id="use-this-package"></a>
+
 ## Use this package
 
 `listModels` describes models offered by catalog-driven interfaces. Core resolution and streaming can still accept unlisted ids. The GUI requires catalog membership for selection and submission; adapters intended for GUI use must implement `listModels` and advertise their available models. The base implementation returns an empty list and therefore offers no GUI models. An entry's optional `badge` holds selector text (one literal, or translations keyed by lowercase language id that include `en`) and a `neutral`, `info`, `success`, or `warning` tone; `resolveModelInfo` omits it, and no model request carries it. Providers publish `llm/models-updated(provider)` when their advertised catalog changes; clients reload the complete catalog, including omitted badges.
 
 Any composition that calls a model provider — an agent loop, a session-title generator, a compaction summarizer — streams its requests through this service. Mount it together with at least one provider adapter; the service itself has no configuration and no provider wire code.
+
+Adapters can publish `llm/request-body` with the serialized provider JSON immediately before dispatch. This diagnostic event excludes HTTP headers and does not alter the request or stream. Consumers decide whether to persist it; the Trajectory Host plugin records ordinary assistant requests.
+
+Adapters publish `llm/response-body` after consumption with the original UTF-8 HTTP body, status, Content-Type, and EOF completeness. `createResponseCapture` observes bytes before JSON or SSE parsing without reading ahead. Fetch handles transport decompression; response headers other than Content-Type are excluded. Interrupted responses retain only the received prefix. Consumers may persist this diagnostic data outside model history.
 
 ### When to choose it
 

@@ -228,6 +228,8 @@ function standaloneProps(
   }
   return {
     sessionId: SID,
+    loadRequestInput: () => Promise.resolve(null),
+    loadResponseBodies: () => Promise.resolve([]),
     useChat: bindSnapshotSelector(createSnapshotStore(EMPTY_CHAT_SNAPSHOT)),
     useSessions: emptySessions(),
     usePanelInfo, useResource,
@@ -400,6 +402,8 @@ function mount(fixture: Awaited<ReturnType<typeof bench>>) {
         return {
           loadOlder: trajectory.loadOlder,
           loadImage: trajectory.loadImage,
+          loadRequestInput: trajectory.loadRequestInput,
+          loadResponseBodies: trajectory.loadResponseBodies,
           setActualDuration: trajectory.setActualDuration,
           useDuration: bindSnapshotSelector(trajectory.hooks.duration),
           t: tZh,
@@ -510,6 +514,22 @@ describe('plugin registration', () => {
     expect(second.hooks.duration.getSnapshot()).toBe(true)
     expect(localStorage.getItem('dsh.trajectory.duration')).toBe('true')
     expect(localStorage.getItem(`dsh.trajectory.duration.${SID}`)).toBeNull()
+  })
+
+  it('loads missing input history and reports a page that makes no progress', async () => {
+    const b = await bench()
+    const entry = b.slots.entries('conversation.view').find(candidate => candidate.options.id === 'trajectory')!
+    const injectEntry = entry.inject as unknown as (sessionId: SessionId) => TrajectoryViewInjected
+    const injected = injectEntry(SID)
+    const controller = new AbortController()
+    expect(await injected.loadRequestInput(1, 1, controller.signal)).toBeNull()
+    expect(b.loadOlder).not.toHaveBeenCalled()
+    await b.runtime.sessions.replaceEvents(SID, [], true)
+    await expect(injected.loadRequestInput(1, 1, controller.signal)).rejects.toThrow('could not be loaded')
+    b.loadOlder.mockImplementationOnce(() => b.runtime.sessions.replaceEvents(SID, [], false))
+    expect(await injected.loadRequestInput(1, 1, controller.signal)).toBeNull()
+    controller.abort()
+    await expect(injected.loadRequestInput(1, 1, controller.signal)).rejects.toThrow()
   })
 
   it('reports whether loading older history changed the Trajectory snapshot', async () => {

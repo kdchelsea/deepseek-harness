@@ -1,3 +1,4 @@
+import { createResponseCapture, type LlmResponseBody } from '@deepseek-ai/dsh-llm'
 /**
  * Generic pi-ai-backed implementation of the Harness LLM seam.
  *
@@ -73,6 +74,11 @@ const ANTHROPIC_TOOL_UPDATE_PLACEHOLDER: ToolSchema = {
   description: 'Reserved placeholder that keeps deferred tool loading active; never call this tool.',
   parameters: { type: 'object', properties: {} },
 }
+// These pi-ai APIs accept a per-call fetch implementation; Google and Bedrock do not.
+const FETCH_CAPTURE_APIS = new Set<Api>([
+  'anthropic-messages', 'openai-completions', 'openai-responses', 'openai-codex-responses',
+  'azure-openai-responses', 'mistral-conversations', 'pi-messages',
+])
 
 /** One resolution's frozen view: the profiles and the collection built from them. */
 interface PiAiSnapshot {
@@ -117,6 +123,10 @@ export interface PiAiAdapterOptions {
    * @returns headers to pass to pi-ai after applying Harness attribution.
    */
   prepareHeaders?: (request: PiAiRequestHeaderContext, headers: Headers) => Headers
+  /** Observe the serialized provider JSON immediately before dispatch, excluding headers. */
+  onRequestBody?: (options: GenerateOptions, body: string) => void | Promise<void>
+  /** Observe raw HTTP response bodies after consumption, including interrupted prefixes. */
+  onResponseBody?: (options: GenerateOptions, response: LlmResponseBody) => void | Promise<void>
   /** Resolve the optional durable attachment service at request time. */
   resolveAttachments?: () => AttachmentStore | undefined
   /** Bridge one attachment reference into the current model-tool execution world. */
@@ -425,6 +435,8 @@ export class PiAiAdapter extends LlmAdapter {
     )
     const apiKey = await this.config.resolveApiKey(options.provider, profile)
 
+    const capture = createResponseCapture(this.config.onResponseBody === undefined
+      ? undefined : body => this.config.onResponseBody?.(options, body))
     const consumer = new AbortController()
     const upstream = options.signal === undefined
       ? consumer.signal
@@ -461,7 +473,14 @@ export class PiAiAdapter extends LlmAdapter {
         ...options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens },
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
         signal: watchdog.signal,
+        ...this.config.onResponseBody !== undefined && FETCH_CAPTURE_APIS.has(model.api)
+          ? { fetch: async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
+            capture.wrap(await fetch(input, init)) }
+          : {},
         headers: requestHeaders(profile.headers, options, model.baseUrl, this.config.prepareHeaders),
+        onPayload: async (payload) => {
+          await this.config.onRequestBody?.(options, JSON.stringify(payload))
+        },
       })
       const iterator = toStreamChunks(events, model.contextWindow, options.signal, model.id)[Symbol.asyncIterator]()
       let exhausted = false
@@ -493,6 +512,7 @@ export class PiAiAdapter extends LlmAdapter {
       throw error
     } finally {
       consumer.abort('pi-ai stream consumer stopped')
+      await capture.flush()
     }
   }
 }

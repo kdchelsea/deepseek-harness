@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-10-trajectory-request-input.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-10-trajectory-request-input.md
+/agent-note-provider-api-requests-in-trajectory:
+  en: 1b21ea29f96166cc
+  zh: 228ba7761bb93529
+/agent-note-provider-api-requests-in-trajectory/problem:
+  en: cb22a8d8699d8ad3
+  zh: 0ad0f17de7cbcaaf
+/agent-note-provider-api-requests-in-trajectory/decision:
+  en: 0cc7ce4275b43520
+  zh: 048fef9081cd52ae
+/agent-note-provider-api-requests-in-trajectory/alternatives-considered:
+  en: 232365db7c066941
+  zh: eac6306eab1d3def
+/agent-note-provider-api-requests-in-trajectory/consequences:
+  en: f0e7ba4f03093b58
+  zh: c29dd045ecacb543

@@ -81,7 +81,10 @@
     "@tanstack/react-virtual": "3.14.10",
     "diff": "^9.0.0",
     "@deepseek-ai/dsh-api-gateway": "workspace:*",
-    "@deepseek-ai/dsh-tools": "workspace:*"
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/dsh-client-connection": "workspace:*",
+    "@deepseek-ai/dsh-session-query": "workspace:*",
+    "eventsource-parser": "^3.1.0"
   },
   "files": [
     "locale/*.json",

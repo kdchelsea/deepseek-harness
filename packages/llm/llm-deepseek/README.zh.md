@@ -13,6 +13,7 @@ kind: "package-reference"
 
 `resolveAuth(connection)` 返回提供方持有的鉴权请求头，以及绑定本次请求凭据的可选失败回调。Messages 和 Files 直接使用这些请求头，不判断凭据类型。上传复用按端点和鉴权请求头的哈希隔离，不持久化原始凭据。
 
+
 ## 目录
 
 - [使用本包](#use-this-package)
@@ -25,11 +26,16 @@ kind: "package-reference"
 -----
 
 <a id="use-this-package"></a>
+
 ## 使用本包
 
 本包导出传输库；provider 插件向 harness LLM 服务注册路由。它在每次操作开始时从 Config 引用捕获连接选项。
 
 适配器接受 LLM 服务的[仅供请求使用的 user 输入](../llm/README.zh.md#use-this-package)，并可将其与持久历史混用；省略请求输入的身份与来源不会改变提供方内容。
+
+适配器在合并 API 扩展字段并确定图片表示后，通过 `llm/request-body` 发布序列化后的完整对话请求。每次图片回退发送都会发布对应请求体，不包含 HTTP 请求头。
+
+适配器通过 `llm/response-body` 捕获原始 HTTP 响应正文，包括 SSE 帧与 HTTP 错误 JSON。生成结束时发布每次 HTTP 响应；提前终止会将捕获的前缀标为不完整。
 
 ### 何时选择
 

@@ -1,3 +1,4 @@
+import { readResponseBodies } from './response-body.ts'
 /**
  * Browser trajectory plugin contributing one entry to the conversation view
  * slot without defining a service.
@@ -15,6 +16,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { createToolResultWatcher } from './watch-tool-result.ts'
+import { inspectRequestInput, readRequestInput } from './request-input.ts'
 import { createTrajectoryDurationStore } from './duration-store.ts'
 import { createTrajectoryStringWrappingStore } from './string-wrapping-store.ts'
 import { en, ja, es, fr, de, ru, pt, NS, zh } from './locales.ts'
@@ -85,11 +87,24 @@ export function apply(ctx: Context): void {
     label: () => t('view.trajectory'),
     children: { 'conversation.trajectory.images': { kind: 'single', scope: 'session' } },
     inject: (sessionId: SessionId): TrajectoryViewInjected => {
-      const session = ctx.sessions.binding(sessionId)?.session
-      if (session === undefined) {
+      const binding = ctx.sessions.binding(sessionId)
+      const session = binding?.session
+      if (binding === undefined || session === undefined) {
         throw new Error(`ui-trajectory: session "${sessionId}" is unavailable`)
       }
       const trajectory = ctx.uiConversation.binding(sessionId).target('trajectory')
+      const loadHistory = async (signal: AbortSignal): Promise<void> => {
+        signal.throwIfAborted()
+        while (binding.eventSource.getSnapshot().hasMore) {
+          const before = binding.eventSource.getSnapshot()
+          await session.loadOlder()
+          signal.throwIfAborted()
+          const after = binding.eventSource.getSnapshot()
+          if (after.hasMore && after.entries[0]?.event.seq === before.entries[0]?.event.seq) {
+            throw new Error('Request input history could not be loaded')
+          }
+        }
+      }
       return {
         hooks: { duration },
         watchToolResult: createToolResultWatcher(ctx.remote, sessionId, (error) => {
@@ -98,6 +113,15 @@ export function apply(ctx: Context): void {
         jsonStringWrapping: {
           getDefault: () => stringWrapping.getSnapshot(),
           setDefault: (value) => { stringWrapping.set(value) },
+        },
+        loadRequestInput: async (turn, step, signal) => {
+          await loadHistory(signal)
+          const seq = inspectRequestInput(binding.eventSource.getSnapshot().entries, turn, step)
+          return seq === null ? null : readRequestInput(sessionId, seq, signal)
+        },
+        loadResponseBodies: async (turn, step, signal) => {
+          await loadHistory(signal)
+          return readResponseBodies(sessionId, binding.eventSource.getSnapshot().entries, turn, step, signal)
         },
         loadOlder: async () => {
           const before = trajectory.getSnapshot()

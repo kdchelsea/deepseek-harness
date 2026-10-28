@@ -11,6 +11,7 @@ kind: "package-reference"
 
 使用 `@deepseek-ai/dsh-llm` 可通过已配置的提供方适配器流式调用模型、发现模型，并解析模型能力与调用默认值。每个已分发请求都可以从会话日志重建。请求在分发前会被深度冻结，因此扩展与适配器可以读取但不能改写。每个流只尝试调用提供方一次：提供方特定的转换由对应适配器完成，可选包 `@deepseek-ai/dsh-llm-retry` 负责重跑失败的请求。流始终以终止结果结束，因此调用方可以一致地处理成功、失败与取消。
 
+
 ## 目录
 
 - [使用本包](#use-this-package)
@@ -23,9 +24,14 @@ kind: "package-reference"
 -----
 
 <a id="use-this-package"></a>
+
 ## 使用本包
 
 任何调用模型提供方的组合——agent loop（智能体循环）、会话标题生成器、压缩（compaction）摘要器——都会通过本服务流式发起请求。与至少一个提供方适配器一起挂载它；服务本身没有任何配置，也不包含提供方协议代码。
+
+适配器可在发送前通过 `llm/request-body` 发布序列化后的服务商 JSON。该诊断事件不包含 HTTP 请求头，也不改变请求或输出流。消费者决定是否持久化；轨迹 Host 插件记录普通助手请求。
+
+适配器在消费后通过 `llm/response-body` 发布原始 UTF-8 HTTP 正文、状态、Content-Type 和 EOF 完整标志。`createResponseCapture` 在 JSON 或 SSE 解析前观察字节，不提前读取。fetch 负责传输解压缩；除 Content-Type 外不包含响应头。中断的响应仅保留已收到的前缀。消费者可在模型历史之外持久化这些诊断数据。
 
 ### 何时选择
 

@@ -134,6 +134,10 @@ describe('PiAiAdapter provider routing', () => {
       streamIdleTimeoutMs: 10_000,
       thinkingBudgets: { high: 2048 },
     })
+    const bodies: string[] = []
+    const responses: unknown[] = []
+    ctx.on('llm/response-body', async (_options, body) => { responses.push(body) })
+    ctx.on('llm/request-body', async (_options, body) => { bodies.push(body) })
     await assemble(ctx, {
       model: 'deepseek-v4-pro',
       messages: [],
@@ -141,6 +145,7 @@ describe('PiAiAdapter provider routing', () => {
       maxTokens: 77,
       sessionId: 'session-for-pi' as never,
     })
+    expect(responses).toEqual([expect.objectContaining({ status: 200, body: textEvents.map(event => `data: ${event}\n\n`).join('') })])
     expect(server.requests[0]).toMatchObject({
       model: 'deepseek-v4-pro',
       temperature: 0.2,
@@ -148,6 +153,8 @@ describe('PiAiAdapter provider routing', () => {
       thinking: { type: 'enabled' },
       reasoning_effort: 'max',
     })
+    expect(bodies).toHaveLength(1)
+    expect(JSON.parse(bodies[0]!)).toEqual(server.requests[0])
     expect(server.requests[0]).not.toHaveProperty('dsh_session_log')
     expect(server.requests[0]).not.toHaveProperty('dsh_plugin_packages')
   })
@@ -1038,5 +1045,44 @@ describe('abort wiring', () => {
     }
     await new Promise(resolve => setTimeout(resolve, 20))
     expect(server.requests).toHaveLength(1)
+  })
+})
+
+
+describe('raw provider responses', () => {
+  it('captures Anthropic event names, message ids, deltas and stop events before parsing', async () => {
+    const events = [
+      { type: 'message_start', message: { id: 'msg_raw', type: 'message', role: 'assistant', model: 'test-model', content: [], stop_reason: null, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 0 } } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: '你好' } },
+      { type: 'content_block_stop', index: 0 },
+      { type: 'message_delta', delta: { stop_reason: 'end_turn', stop_sequence: null }, usage: { output_tokens: 1 } },
+      { type: 'message_stop' },
+    ]
+    const body = events.map(event => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join('')
+    const server = await mockServer([{ body, headers: { 'content-type': 'text/event-stream' } }])
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmPiAi, { providers: { 'raw-anthropic': {
+      api: 'anthropic-messages', baseURL: server.url, apiKeyEnv: 'PI_TEST_KEY', models: [{ id: 'test-model' }],
+    } } })
+    const responses: unknown[] = []
+    ctx.on('llm/response-body', async (_options, response) => { responses.push(response) })
+    const result = await assemble(ctx, { provider: 'raw-anthropic', model: 'test-model', messages: [] })
+    expect(result.message.content).toEqual([{ type: 'text', text: '你好' }])
+    expect(responses).toEqual([expect.objectContaining({ body, status: 200, contentType: 'text/event-stream' })])
+    await ctx.fiber.dispose()
+  })
+
+  it('captures an HTTP error body even when generation fails', async () => {
+    const body = '{ "error": {"message":"busy"} }'
+    const server = await mockServer([{ status: 429, body }])
+    const ctx = await harness(server.url)
+    const responses: unknown[] = []
+    ctx.on('llm/response-body', async (_options, response) => { responses.push(response) })
+    const result = await assemble(ctx, { model: 'deepseek-v4-pro', messages: [] })
+    expect(result.finish.kind).toBe('error')
+    expect(responses).toEqual([{ body, status: 429, contentType: 'application/json', complete: true }])
+    await ctx.fiber.dispose()
   })
 })

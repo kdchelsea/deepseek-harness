@@ -36,6 +36,10 @@ const EXPORTED_LOG_FILE = `session.v${SESSION_FORMAT_VERSION}.jsonl`
 const PROMPT_TURN1 = 'NavScenario: first run bash to print exactly NAVIGATION_OK, then read nav-a.md and nav-b.md using two read calls in ONE assistant message, then reply with the single word FIRST_DONE and stop.'
 const PROMPT_TURN2 = 'Reply in markdown with: a level-2 heading "Navigation Summary", a bulleted list of exactly two items, and a fenced code block containing echo WATERFALL. Then stop.'
 
+const RAW_RESPONSE_BODY = 'event: response.created\r\nid: event-1\r\ndata: {"type":"response.created","response":{"id":"resp_test","model":"test-model","instructions":"Keep this exact text."}}\r\n\r\n'
+  + 'data: {"type":"response.output_text.delta","delta":"Hello"}\n\n'
+  + 'data: [DONE]\n\n'
+
 async function baselineResponse(
   page: Page,
 ): Promise<Response> {
@@ -98,6 +102,12 @@ describe('web e2e: navigation & panes over a rich seeded session', () => {
       expect(fixtureUserPrompts(raw), 'seed fixture must carry exactly the two drive prompts')
         .toEqual([PROMPT_TURN1, PROMPT_TURN2])
       await seedSession(scaffold, raw, SEED_ID)
+      const lines = raw.trimEnd().replaceAll('NavScenario:', 'RawResponseFixture:').replaceAll('WATERFALL', 'RAW_ONLY').split('\n')
+      lines.splice(lines.length - 1, 0, JSON.stringify({ type: 'trajectory/response', data: {
+        turn: 1, step: 1, status: 200, contentType: 'text/event-stream', complete: true,
+        content: [{ type: 'file', attachment: { attachmentId: `sha256:${'a'.repeat(64)}`, name: 'response.txt', bytes: RAW_RESPONSE_BODY.length } }],
+      } }))
+      await seedSession(scaffold, lines.join('\n') + '\n', 'raw-response-inspection')
     }
     browser = await chromium.launch()
   }, 120_000)
@@ -501,10 +511,62 @@ describe('web e2e: navigation & panes over a rich seeded session', () => {
     expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('NAVIGATION_OK')
   }, 60_000)
 
+  it.skipIf(MODE === 'record')('shows recorded model responses when historical provider request bodies are unavailable', async () => {
+    await ensureSeedOpen(page)
+    await page.getByRole('tab', { name: 'Trajectory' }).click()
+    await page.getByRole('button', { name: 'Request #1', exact: true }).click()
+    const details = page.getByRole('complementary', { name: 'Event details' })
+    await details.getByRole('tab', { name: 'Input', exact: true }).click()
+    await details.getByText('No provider API request body was recorded.', { exact: true }).waitFor()
+    const snapshot = await captureStableAria(page, '[aria-label="Event details"]', scaffold.workspaceCwd)
+    await compareOrRefreshGolden(join(SNAPSHOT_DIR, 'request-input.expected.md'), snapshot, MODE)
+    await details.getByRole('tab', { name: 'Response', exact: true }).click()
+    const response = details.getByRole('tabpanel', { name: 'Response', exact: true })
+    await response.getByText('Block #1 thinking', { exact: true }).waitFor()
+    expect(await response.textContent()).toContain('NAVIGATION_OK')
+    const responseSnapshot = await captureStableAria(page, '[aria-label="Event details"]', scaffold.workspaceCwd)
+    await compareOrRefreshGolden(join(SNAPSHOT_DIR, 'request-response.expected.md'), responseSnapshot, MODE)
+    await details.getByRole('tab', { name: 'Raw response', exact: true }).click()
+    await details.getByText('No raw response was recorded; historical responses cannot be reconstructed.', { exact: true }).waitFor()
+    const rawSnapshot = await captureStableAria(page, '[aria-label="Event details"]', scaffold.workspaceCwd)
+    await compareOrRefreshGolden(join(SNAPSHOT_DIR, 'request-raw-response.expected.md'), rawSnapshot, MODE)
+  }, 60_000)
+
+  it.skipIf(MODE === 'record')('expands raw response events as JSON and retains the exact source text', async () => {
+    const body = RAW_RESPONSE_BODY
+    await page.route('**/api/trajectory.response-body?*', route => route.fulfill({
+      json: { body, status: 200, contentType: 'text/event-stream', complete: true },
+    }))
+    try {
+      await ensureSeedOpen(page)
+      await page.getByPlaceholder('Search sessions', { exact: false }).fill('RawResponseFixture')
+      const result = page.getByRole('tree', { name: 'Search results' }).getByRole('treeitem')
+      await expect.poll(() => result.count()).toBe(1)
+      await result.click()
+      await page.getByRole('tab', { name: 'Trajectory' }).click()
+      await page.getByRole('button', { name: 'Request #1', exact: true }).click()
+      const details = page.getByRole('complementary', { name: 'Event details' })
+      await details.getByRole('tab', { name: 'Raw response', exact: true }).click()
+      await details.getByText('3 events', { exact: true }).waitFor()
+      expect(await details.getByRole('tree').count()).toBe(0)
+      await details.getByText('#1 response.created', { exact: true }).click()
+      const tree = details.getByRole('tree', { name: '#1 response.created', exact: true })
+      await tree.waitFor()
+      await tree.getByRole('button', { name: 'Expand JSON node', exact: true }).click()
+      await tree.getByRole('group').getByText('"test-model"', { exact: true }).waitFor()
+      const snapshot = await captureStableAria(page, '[aria-label="Event details"]', scaffold.workspaceCwd)
+      await compareOrRefreshGolden(fileURLToPath(new URL('./trajectory-raw-response.expected.md', import.meta.url)), snapshot, MODE)
+      await details.getByRole('button', { name: 'Original text', exact: true }).click()
+      expect(await details.locator('pre').textContent()).toBe(body)
+    } finally {
+      await page.unroute('**/api/trajectory.response-body?*')
+    }
+  }, 60_000)
+
   it.skipIf(MODE === 'record')('keeps the recorded fixture inventory exact', async () => {
     await assertFixtureInventory(SNAPSHOT_DIR, [
       'session.v3.jsonl', 'search-results.expected.md', 'trajectory.expected.md',
-      'terminal-card.expected.md',
+      'terminal-card.expected.md', 'request-input.expected.md', 'request-response.expected.md', 'request-raw-response.expected.md',
     ])
   })
 })

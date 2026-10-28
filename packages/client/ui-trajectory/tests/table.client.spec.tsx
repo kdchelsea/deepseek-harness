@@ -1147,3 +1147,143 @@ describe('TrajectoryTable', () => {
     expect(onInspectApplied).not.toHaveBeenCalled()
   })
 })
+
+
+describe('request input inspector', () => {
+  it('loads input only when opened and renders the logged request', async () => {
+    const load = vi.fn(async () => ({ model: 'input-model', messages: [], tools: [] }))
+    render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} loadRequestInput={load} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    expect(load).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('tab', { name: 'Input' }))
+    await waitFor(() => { expect(screen.getByRole('tree', { name: 'Provider API request JSON' })).toBeTruthy() })
+    expect(load).toHaveBeenCalledWith(1, 1, expect.any(AbortSignal))
+    expect(screen.getByRole('tree', { name: 'Provider API request JSON' }).textContent).toContain('messages')
+    expect(screen.getByRole('tree', { name: 'Provider API request JSON' }).textContent).toContain('tools')
+  })
+
+  it('discards a late input result after the inspector is closed', async () => {
+    let finish: ((value: null) => void) | undefined
+    let signal: AbortSignal | undefined
+    const load = vi.fn((_turn: number, _step: number, current: AbortSignal) => {
+      signal = current
+      return new Promise<null>((resolve) => { finish = resolve })
+    })
+    render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} loadRequestInput={load} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Input' }))
+    expect(screen.getByRole('status').textContent).toContain('Loading API request body')
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+    expect(signal?.aborted).toBe(true)
+    finish?.(null)
+    await Promise.resolve()
+    expect(screen.queryByText('No provider API request body was recorded.')).toBeNull()
+  })
+
+  it('shows a read failure and retries when the input tab is reopened', async () => {
+    const load = vi.fn().mockRejectedValueOnce(new Error('read failed')).mockResolvedValueOnce(null)
+    render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} loadRequestInput={load} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Input' }))
+    await screen.findByText('Could not load request input. Reopen the Input tab to retry.')
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Input' }))
+    await screen.findByText('No provider API request body was recorded.')
+    expect(load).toHaveBeenCalledTimes(2)
+  })
+})
+
+
+describe('request response inspector', () => {
+  it('shows model blocks in order and follows streaming updates without showing tool results', () => {
+    const cell = TURNS[0]!.groups[0]!.cells[0]!
+    const blocks = [
+      { type: 'thinking', content: 'Inspect the workspace first' },
+      { type: 'text', content: 'Checking files' },
+      { type: 'tool-call', content: '{"command":"pwd"}', callId: 'call-1', toolName: 'bash' },
+    ]
+    const view = render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS}
+      streamingCells={[{ ...cell, sourceBlocks: blocks }]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Response' }))
+    const panel = screen.getByRole('tabpanel', { name: 'Response' })
+    expect(Array.from(panel.querySelectorAll('pre'), node => node.textContent)).toEqual(blocks.map(block => block.content))
+    expect(panel.textContent).not.toContain('ToolError')
+    view.rerender(<TrajectoryTable turns={TURNS} {...FOLD_PROPS}
+      streamingCells={[{ ...cell, sourceBlocks: [...blocks, { type: 'text', content: 'Finished checking' }] }]} />)
+    expect(panel.textContent).toContain('Finished checking')
+  })
+
+  it('shows the result identified by the compaction request', () => {
+    const turns: readonly TrajectoryTurnModel[] = [{ turn: null, groups: [{
+      title: 'Compaction 10', cells: [{ index: 1, kind: 'compacted', sourceSeq: 11,
+        text: 'Summary', outputDetail: 'Retained context', timeSeconds: 1 }],
+    }] }]
+    render(<TrajectoryTable turns={turns} {...FOLD_PROPS} requestNumbers={[{
+      purpose: 'compaction', turn: null, step: 0, seq: 10, resultSeq: 11,
+      group: 'Compaction 10', number: 1, status: 'complete',
+    }]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1 · Compaction' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Response' }))
+    expect(screen.getByRole('tabpanel', { name: 'Response' }).textContent).toContain('Retained context')
+  })
+
+  it.each(['running', 'error', 'complete'] as const)('reports missing output for a %s request', (status) => {
+    render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} requestNumbers={[{
+      turn: 1, step: 1, group: 'Step 1', number: 1, status, resultSeq: 999,
+    }]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Response' }))
+    expect(screen.getByRole('status').textContent).toBe(status === 'running'
+      ? 'Waiting for model response…' : 'No model response in the loaded history.')
+  })
+})
+
+
+describe('raw response inspector', () => {
+  it('renders every HTTP response verbatim and reloads after the request settles', async () => {
+    const raw = 'event: content_block_delta\r\ndata: {"text":"你好"}\r\n\r\n'
+    const load = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([
+      { status: 429, contentType: 'application/json', complete: true, body: '{ "error": "busy" }' },
+      { status: 200, contentType: 'text/event-stream', complete: false, body: raw },
+    ])
+    const request = { turn: 1, step: 1, group: 'Step 1', number: 1 }
+    const view = render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} loadResponseBodies={load}
+      requestNumbers={[{ ...request, status: 'running' }]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    expect(load).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('tab', { name: 'Raw response' }))
+    await screen.findByText('Raw responses are saved when the request ends.')
+    view.rerender(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} loadResponseBodies={load}
+      requestNumbers={[{ ...request, status: 'complete' }]} />)
+    await screen.findByText('The response was not fully read; only the received content is shown.')
+    expect(screen.getByRole('tree', { name: 'Response JSON' }).textContent).toContain('busy')
+    expect(screen.getByText('#1 content_block_delta')).toBeTruthy()
+    expect(screen.queryByRole('tree', { name: '#1 content_block_delta' })).toBeNull()
+    const details = screen.getByText('#1 content_block_delta').closest('details')!
+    details.open = true
+    fireEvent(details, new Event('toggle'))
+    expect((await screen.findByRole('tree', { name: '#1 content_block_delta' })).textContent).toContain('你好')
+    for (const button of screen.getAllByRole('button', { name: 'Original text' })) fireEvent.click(button)
+    expect(Array.from(screen.getByRole('tabpanel', { name: 'Raw response' }).querySelectorAll('pre'), node => node.textContent))
+      .toEqual(['{ "error": "busy" }', raw])
+    expect(load).toHaveBeenCalledTimes(2)
+  })
+
+  it('reports unavailable history and ignores a late response after closing', async () => {
+    let finish: ((value: []) => void) | undefined
+    let signal: AbortSignal | undefined
+    const load = vi.fn((_turn: number, _step: number, current: AbortSignal) => {
+      signal = current
+      return new Promise<[]>((resolve) => { finish = resolve })
+    })
+    render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} loadResponseBodies={load} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Raw response' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+    expect(signal?.aborted).toBe(true)
+    finish?.([])
+    await Promise.resolve()
+    expect(screen.queryByText('No raw response was recorded; historical responses cannot be reconstructed.')).toBeNull()
+  })
+})

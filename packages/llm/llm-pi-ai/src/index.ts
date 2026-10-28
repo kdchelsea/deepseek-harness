@@ -197,6 +197,8 @@ export function apply(ctx: Context, config: Config): void {
   const adapter = new PiAiAdapter({
     profiles,
     resolveApiKey,
+    onRequestBody: (options, body) => ctx.parallel('llm/request-body', options, body),
+    onResponseBody: (options, body) => ctx.parallel('llm/response-body', options, body),
     auth,
     resolveAttachments: () => ctx.get('attachments'),
     resolveImageAccess: (attachments, ref) => resolveImageAttachmentAccess(

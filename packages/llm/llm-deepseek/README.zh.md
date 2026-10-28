@@ -11,6 +11,7 @@ kind: "package-reference"
 
 使用本包可通过 `deepseek-official` 路由流式调用 DeepSeek 模型，包括配置 thinking 与推理强度、向视觉模型输入图片，以及查看建议性模型目录。端点、凭据、目录与 thinking 策略均按请求解析，因此有效的用户设置更改会在下一个请求生效，无需重启进程。它适合 DeepSeek 官方 API 或 OpenAI 兼容网关；由于路由名不同，可与 pi-ai 包并用。
 
+
 ## 目录
 
 - [使用本包](#use-this-package)
@@ -23,9 +24,14 @@ kind: "package-reference"
 -----
 
 <a id="use-this-package"></a>
+
 ## 使用本包
 
 当组合需要通过 harness LLM（大语言模型）服务流式调用 DeepSeek 模型时挂载本插件。它注册唯一的 `deepseek-official` 路由，并按请求解析连接事实，因此组合条目加可选用户设置分节即可驱动整个适配器。
+
+适配器在合并 API 扩展字段并确定图片表示后，通过 `llm/request-body` 发布序列化后的完整对话请求。每次图片回退发送都会发布对应请求体，不包含 HTTP 请求头。
+
+适配器通过 `llm/response-body` 捕获原始 HTTP 响应正文，包括 SSE 帧与 HTTP 错误 JSON。生成结束时发布每次 HTTP 响应；提前终止会将捕获的前缀标为不完整。
 
 ### 何时选择
 

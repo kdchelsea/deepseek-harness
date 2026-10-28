@@ -11,6 +11,7 @@ kind: "package-reference"
 
 `@deepseek-ai/dsh-llm-pi-ai` 通过一份配置把模型请求路由到多个 pi-ai 提供方、OpenAI 兼容网关或自托管服务器。已安装的 pi-ai 提供方会提供端点、协议和模型目录默认值；自定义路由可以直接声明这些值，无需修改代码。profile 与凭据按请求解析，因此设置变更会在下一个请求生效，无需重启。受支持的提供方可以使用已存储的 OAuth 或交互式密钥登录，并通过跨进程锁刷新凭据。本包可以在没有路由时启动，并在用户设置添加路由后将其激活。
 
+
 ## 目录
 
 - [使用本包](#use-this-package)
@@ -23,9 +24,14 @@ kind: "package-reference"
 -----
 
 <a id="use-this-package"></a>
+
 ## 使用本包
 
 当组合需要通过 pi-ai 的提供方目录、或通过 pi-ai 已安装目录未描述的网关路由模型请求时挂载本插件。`providers` 字典就是整个配置面：每个键都是请求用 `GenerateOptions.provider` 选择的提供方路由名。
+
+适配器将 pi-ai 的服务商请求体回调通过 `llm/request-body` 转发为序列化 JSON，不替换请求体，也不包含 HTTP 请求头。
+
+原始 HTTP 响应采集通过每次调用的 fetch 注入支持 Anthropic Messages、OpenAI Completions/Responses/Codex Responses、Azure Responses、Mistral Conversations 和 Pi Messages。生成结束时通过 `llm/response-body` 发布未经解析的 JSON/SSE，包括 HTTP 错误和不完整的前缀。不采集 Google、Bedrock 和 WebSocket 响应；采集不会改变所选传输方式。
 
 ### 何时选择
 

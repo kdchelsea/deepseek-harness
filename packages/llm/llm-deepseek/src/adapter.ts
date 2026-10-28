@@ -1,3 +1,4 @@
+import { createResponseCapture, type LlmResponseBody } from '@deepseek-ai/dsh-llm'
 /**
  * `DeepSeekAdapter`: fetch + SSE against a DeepSeek (OpenAI-compatible)
  * chat-completions endpoint, emitting harness StreamChunks. The adapter is
@@ -129,6 +130,10 @@ export interface DeepSeekAdapterOptions {
    * `MISSING_CREDENTIAL` when no key is available anywhere.
    */
   resolveApiKey: (connection: DeepSeekConnectionOptions) => Promise<string>
+  /** Observe the serialized provider JSON immediately before dispatch, excluding headers. */
+  onRequestBody?: (options: GenerateOptions, body: string) => void | Promise<void>
+  /** Observe raw HTTP response bodies after consumption, including interrupted prefixes. */
+  onResponseBody?: (options: GenerateOptions, response: LlmResponseBody) => void | Promise<void>
   /** Resolve the harness-home anonymous id shared with telemetry and feedback. */
   resolveUserId: () => AnonymousUserId
   /** Resolve the current durable attachment service; absence rejects image input. */
@@ -478,6 +483,8 @@ export class DeepSeekAdapter extends LlmAdapter {
     }
     const apiKey = await this.config.resolveApiKey(connection)
     const userId = this.config.resolveUserId()
+    const capture = createResponseCapture(this.config.onResponseBody === undefined
+      ? undefined : body => this.config.onResponseBody?.(options, body))
     const consumer = new AbortController()
     const upstream = options.signal === undefined
       ? consumer.signal
@@ -491,6 +498,7 @@ export class DeepSeekAdapter extends LlmAdapter {
       userId,
       attachments,
       () => { watchdog.pulse() },
+      capture,
     )[Symbol.asyncIterator]()
     let exhausted = false
     try {
@@ -524,6 +532,7 @@ export class DeepSeekAdapter extends LlmAdapter {
           // The consumer controller already owns termination; a return-time abort cannot add a second outcome.
         }
       }
+      await capture.flush()
     }
   }
 
@@ -535,6 +544,7 @@ export class DeepSeekAdapter extends LlmAdapter {
     userId: AnonymousUserId,
     attachments: AttachmentStore | undefined,
     onActivity: () => void,
+    capture: ReturnType<typeof createResponseCapture>,
   ): AsyncIterable<StreamChunk> {
     const headers = {
       'authorization': `Bearer ${apiKey}`,
@@ -643,6 +653,7 @@ export class DeepSeekAdapter extends LlmAdapter {
       // Prepared outside the try so the TRANSPORT label below covers exactly the
       // transport boundary, never a serialization failure.
       const payload = JSON.stringify({ ...body, ...extensions.fields })
+      await this.config.onRequestBody?.(options, payload)
 
       // TODO(http): adopt the Cordis HTTP service when shared transport configuration
       // outweighs its additional runtime dependencies.
@@ -663,6 +674,7 @@ export class DeepSeekAdapter extends LlmAdapter {
         )
       }
 
+      response = capture.wrap(response)
       if (!response.ok) {
         let message = `DeepSeek API error (HTTP ${response.status})`
         let providerError: WireError['error']

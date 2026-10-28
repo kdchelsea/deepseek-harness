@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-10-trajectory-request-input.md
+2026-09-10-trajectory-request-input.md: 1b156bdfa9a6f1a8dc1a2d1c337a87553f4e8ca4
+2026-09-10-trajectory-request-input.zh.md: ff642fc4009af03897feb1b845835b9517c8a2af

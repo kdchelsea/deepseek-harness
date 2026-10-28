@@ -1,0 +1,14 @@
+- complementary "Event details":
+  - separator "Resize event details"
+  - text: "Request #1 Turn 1"
+  - button "Close details"
+  - tablist "Event details":
+    - tab "Summary"
+    - tab "Input" [selected]
+    - tab "Response"
+    - tab "Raw response"
+    - tab "Options"
+    - tab "Usage"
+    - tab "Timing"
+  - tabpanel "Input":
+    - status: No provider API request body was recorded.

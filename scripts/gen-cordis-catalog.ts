@@ -258,6 +258,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   ContentBlock: 'llm-streaming.md',
   CreateAgentOptions: 'core.md',
   GenerateOptions: 'llm-streaming.md',
+  LlmResponseBody: 'llm-streaming.md',
   Inbox: 'core.md',
   InboxItem: 'core.md',
   InboxPlacement: 'core.md',

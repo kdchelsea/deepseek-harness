@@ -1064,6 +1064,43 @@ The provider topology changed: an adapter registered or unregistered routes, or 
 
 Source: [`packages/llm/llm/src/types.ts`](../../packages/llm/llm/src/types.ts)
 
+<a id="llmrequest-body--parallel"></a>
+
+#### `llm/request-body` — parallel
+
+Observe the serialized provider body immediately before dispatch. Headers are excluded. Adapters may publish multiple bodies for transport retries.
+
+```ts cordis-catalog
+/**
+ * Observe the serialized provider body immediately before dispatch. Headers
+ * are excluded. Adapters may publish multiple bodies for transport retries.
+ * @param options - provider-neutral request identifying the owning Session.
+ * @param body - serialized provider JSON after adapter transformations.
+ * @mode parallel
+ */
+'llm/request-body'(options: GenerateOptions, body: string): Promise<void>
+```
+
+Source: [`packages/llm/llm/src/types.ts`](../../packages/llm/llm/src/types.ts)
+
+<a id="llmresponse-body--parallel"></a>
+
+#### `llm/response-body` — parallel
+
+Received HTTP body before provider parsing, published when the generation settles.
+
+```ts cordis-catalog
+/**
+ * Received HTTP body before provider parsing, published when the generation settles.
+ * @param options - request identifying the owning Session.
+ * @param response - raw UTF-8 body, HTTP metadata, and transport completeness.
+ * @mode parallel
+ */
+'llm/response-body'(options: GenerateOptions, response: LlmResponseBody): Promise<void>
+```
+
+Source: [`packages/llm/llm/src/types.ts`](../../packages/llm/llm/src/types.ts)
+
 <a id="llmstream--waterfall"></a>
 
 #### `llm/stream` — waterfall

@@ -191,6 +191,8 @@ describe('DeepSeekAdapter against a mock server', () => {
   it('merges prepared extension fields and accepts them once after HTTP 2xx', async () => {
     const server = await mockServer([{ kind: 'sse', events: textEvents }])
     const accept = vi.fn()
+    const onRequestBody = vi.fn<(_options: unknown, body: string) => void>()
+    const onResponseBody = vi.fn()
     const prepareExtensions = vi.fn(async () => ({
       fields: { dsh_test: { version: 1 } },
       accept: async () => { accept() },
@@ -200,12 +202,20 @@ describe('DeepSeekAdapter against a mock server', () => {
       resolveApiKey: () => Promise.resolve('k'),
       resolveUserId: () => TEST_USER_ID,
       prepareExtensions: prepareExtensions as never,
+      onRequestBody,
+      onResponseBody,
     })
 
     await drain(adapter.stream({ provider: 'deepseek-official', model: 'm', messages: [], sessionId: SessionId('s') }))
     expect(server.requests[0]).toMatchObject({ dsh_test: { version: 1 } })
     expect(prepareExtensions).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 's' }))
     expect(accept).toHaveBeenCalledOnce()
+    expect(onRequestBody).toHaveBeenCalledOnce()
+    expect(JSON.parse(onRequestBody.mock.calls[0]![1])).toEqual(server.requests[0])
+    expect(onResponseBody).toHaveBeenCalledOnce()
+    expect(onResponseBody.mock.calls[0]![1]).toMatchObject({
+      status: 200, contentType: 'text/event-stream', body: textEvents.map(event => `data: ${event}\n\n`).join(''),
+    })
   })
 
   it('fails before fetch on extension preparation or base-field collision', async () => {

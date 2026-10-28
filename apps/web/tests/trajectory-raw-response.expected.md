@@ -1,0 +1,40 @@
+- complementary "Event details":
+  - separator "Resize event details"
+  - text: "Request #1 Turn 1"
+  - button "Close details"
+  - tablist "Event details":
+    - tab "Summary"
+    - tab "Input"
+    - tab "Response"
+    - tab "Raw response" [selected]
+    - tab "Options"
+    - tab "Usage"
+    - tab "Timing"
+  - tabpanel "Raw response":
+    - paragraph: HTTP response body received before parsing, preserving JSON / SSE text.
+    - text: "Response #1 · HTTP 200 text/event-stream"
+    - button "Structured" [pressed]
+    - button "Original text"
+    - text: 3 events
+    - paragraph: Expand an event to inspect its fields. Comments and unfinished events remain in the original text.
+    - group:
+      - img
+      - text: "#1 response.created"
+      - paragraph: "Event ID: event-1"
+      - text: "{"
+      - tree "#1 response.created":
+        - treeitem "type:\"response.created\","
+        - 'treeitem "Collapse JSON node response:{id: \"resp_test\", model: \"test-model\", instructions: \"Keep this exact text.\"}" [expanded]':
+          - button "Collapse JSON node" [expanded]
+          - text: "response:{id: \"resp_test\", model: \"test-model\", instructions: \"Keep this exact text.\"}"
+          - group:
+            - treeitem "id:\"resp_test\","
+            - treeitem "model:\"test-model\","
+            - treeitem "instructions:\"Keep this exact text.\""
+      - text: "}"
+    - group:
+      - img
+      - text: "#2 response.output_text.delta"
+    - group:
+      - img
+      - text: "#3 [DONE]"

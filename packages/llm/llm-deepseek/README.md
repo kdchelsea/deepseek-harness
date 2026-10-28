@@ -11,6 +11,7 @@ English | [中文](README.zh.md)
 
 Use this package to stream DeepSeek models through the `deepseek-official` route, including configurable thinking and reasoning effort, image input for vision models, and an advisory model catalog. Endpoint, credentials, catalog, and thinking policy resolve for each request, so valid user-settings changes apply to the next request without restarting the process. Choose it for DeepSeek's official API or an OpenAI-compatible gateway; it can run beside the pi-ai package because they use different route names.
 
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)
@@ -23,9 +24,14 @@ Use this package to stream DeepSeek models through the `deepseek-official` route
 -----
 
 <a id="use-this-package"></a>
+
 ## Use this package
 
 Mount this plugin when a composition streams DeepSeek models through the harness LLM service. It registers the single `deepseek-official` route and resolves connection facts per request, so a composition entry plus an optional user settings section drive the whole adapter.
+
+The adapter publishes the exact serialized chat request through `llm/request-body` after merging API extensions and resolving image representations. Each image fallback dispatch publishes its own body. HTTP headers are excluded.
+
+The adapter captures raw HTTP response bodies through `llm/response-body`, including SSE framing and HTTP error JSON. Each HTTP response is published when generation settles; early termination marks the captured prefix incomplete.
 
 ### When to choose it
 

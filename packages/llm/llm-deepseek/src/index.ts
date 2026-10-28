@@ -471,6 +471,8 @@ export function apply(ctx: Context, config: Config): void {
   const adapter = new DeepSeekAdapter({
     options,
     resolveApiKey,
+    onRequestBody: (options, body) => ctx.parallel('llm/request-body', options, body),
+    onResponseBody: (options, body) => ctx.parallel('llm/response-body', options, body),
     resolveUserId,
     resolveAttachments: () => ctx.get('attachments'),
     resolveImageAccess: (attachments, ref) => resolveImageAttachmentAccess(

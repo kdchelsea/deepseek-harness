@@ -1,0 +1,26 @@
+- complementary "Event details":
+  - separator "Resize event details"
+  - text: "Request #1 Turn 1"
+  - button "Close details"
+  - tablist "Event details":
+    - tab "Summary"
+    - tab "Input"
+    - tab "Response" [selected]
+    - tab "Raw response"
+    - tab "Options"
+    - tab "Usage"
+    - tab "Timing"
+  - tabpanel "Response":
+    - text: "Block #1 thinking The user wants me to follow a specific navigation scenario. Let me: 1. Run bash to print \"NAVIGATION_OK\" 2. Read nav-a.md and nav-b.md in two read calls in ONE message 3. Reply with \"FIRST_DONE\" Let me start with the bash command and the reads."
+    - 'button "Open Block #2 tool call summary"':
+      - text: "Block #2 tool-call"
+      - img
+    - text: "{\"command\": \"echo NAVIGATION_OK\", \"description\": \"Print NAVIGATION_OK\"}"
+    - 'button "Open Block #3 tool call summary"':
+      - text: "Block #3 tool-call"
+      - img
+    - text: "{\"file_path\": \"nav-a.md\"}"
+    - 'button "Open Block #4 tool call summary"':
+      - text: "Block #4 tool-call"
+      - img
+    - text: "{\"file_path\": \"nav-b.md\"}"

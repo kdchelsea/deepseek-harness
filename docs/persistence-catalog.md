@@ -1077,6 +1077,30 @@ Source: [`packages/workflow/tool-workflow/src/types.ts:62`](../packages/workflow
 
 Source: [`packages/workflow/tool-workflow/src/types.ts:47`](../packages/workflow/tool-workflow/src/types.ts)
 
+### `trajectory/*`
+
+<a id="trajectoryrequest--log-only"></a>
+
+#### `trajectory/request` — log-only
+
+```ts persistence-catalog
+/** Provider JSON stored as a file; the reference never enters the model surface. */
+'trajectory/request': { turn: number; step: number; content: [{ type: 'file'; attachment: FileAttachmentRef }] }
+```
+
+Source: [`packages/client/ui-trajectory/src/request.ts:17`](../packages/client/ui-trajectory/src/request.ts)
+
+<a id="trajectoryresponse--log-only"></a>
+
+#### `trajectory/response` — log-only
+
+```ts persistence-catalog
+/** Raw response attachment and HTTP metadata, excluded from model history. */
+'trajectory/response': Omit<LlmResponseBody, 'body'> & { turn: number; step: number; content: [{ type: 'file'; attachment: FileAttachmentRef }] }
+```
+
+Source: [`packages/client/ui-trajectory/src/request.ts:15`](../packages/client/ui-trajectory/src/request.ts)
+
 ### `turn/*`
 
 <a id="turnend--log-only"></a>

@@ -1,7 +1,11 @@
+import { ResponseBodyView } from './ResponseBodyView.tsx'
+import type { LoadResponseBodies } from './response-body.ts'
+import type { LlmResponseBody } from '@deepseek-ai/dsh-llm/types'
 /** Turn-aware trajectory event ledger with a local record inspector. */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import type { LoadRequestInput, TrajectoryRequestInput } from './request-input.ts'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   IconChevronRightOutline14,
@@ -165,6 +169,7 @@ type DetailTab =
   | 'source'
   | 'input'
   | 'output'
+  | 'raw-response'
   | 'schema'
   | 'options'
   | 'usage'
@@ -218,6 +223,9 @@ const SYSTEM_UPDATE_TABS: readonly DetailTabItem[] = [
 ]
 const REQUEST_TABS: readonly DetailTabItem[] = [
   { id: 'overview', labelKey: 'tab.summary' },
+  { id: 'input', labelKey: 'tab.input' },
+  { id: 'output', labelKey: 'tab.response' },
+  { id: 'raw-response', labelKey: 'tab.rawResponse' },
   { id: 'options', labelKey: 'tab.options' },
   { id: 'usage', labelKey: 'tab.usage' },
   { id: 'timing', labelKey: 'tab.timing' },
@@ -382,6 +390,10 @@ export interface TrajectoryTableProps {
   renderImages: RenderMessageImages
   /** Session-global request numbers for the request groups visible in this context. */
   requestNumbers?: readonly TrajectoryRequestNumber[]
+  /** Resolve one request input from complete Session history on demand. */
+  loadRequestInput?: LoadRequestInput
+  /** Read recorded raw HTTP responses for one request step. */
+  loadResponseBodies?: LoadResponseBodies
   /** Grouped records in display order. */
   turns: readonly TrajectoryTurnModel[]
   /** In-flight cells whose content replaces the matching structural record index. */
@@ -839,6 +851,73 @@ function RequestUsagePanel({
       </section>
     </div>
   )
+}
+
+function RequestInput({ request, load, t }: {
+  request: TrajectoryRequestNumber
+  load: LoadRequestInput | undefined
+  t: TrajectoryTranslate
+}) {
+  const [state, setState] = useState<TrajectoryRequestInput | 'loading' | 'error' | null>('loading')
+  useEffect(() => {
+    if (request.purpose === 'compaction' || load === undefined) {
+      setState(null)
+      return
+    }
+    const controller = new AbortController()
+    setState('loading')
+    void load(request.turn, request.step, controller.signal).then(
+      (input) => { if (!controller.signal.aborted) setState(input) },
+      () => { if (!controller.signal.aborted) setState('error') },
+    )
+    return () => { controller.abort() }
+  }, [load, request.turn, request.step, request.purpose])
+  if (state === 'loading' || state === 'error' || state === null) {
+    return <p className={css.noPayload} role="status">{t(state === 'loading'
+      ? 'input.loading' : state === 'error' ? 'input.error' : 'input.notRecorded')}</p>
+  }
+  return (
+    <>
+      <p className={css.noPayload}>{t('input.description')}</p>
+      <JsonTree data={state} label={t('input.json')} labels={jsonTreeLabels(t)} className={css.jsonPayload} />
+    </>
+  )
+}
+
+function RawResponse({ request, load, t }: {
+  request: TrajectoryRequestNumber
+  load: LoadResponseBodies | undefined
+  t: TrajectoryTranslate
+}) {
+  const [state, setState] = useState<readonly LlmResponseBody[] | 'loading' | 'error'>('loading')
+  useEffect(() => {
+    if (request.purpose === 'compaction' || load === undefined) {
+      setState([])
+      return
+    }
+    const controller = new AbortController()
+    setState('loading')
+    void load(request.turn, request.step, controller.signal).then(
+      (bodies) => { if (!controller.signal.aborted) setState(bodies) },
+      () => { if (!controller.signal.aborted) setState('error') },
+    )
+    return () => { controller.abort() }
+  }, [load, request.turn, request.step, request.purpose, request.status, request.completedAt])
+  if (state === 'loading' || state === 'error' || state.length === 0) {
+    return <p className={css.noPayload} role="status">{t(state === 'loading'
+      ? 'rawResponse.loading' : state === 'error' ? 'rawResponse.error'
+        : request.status === 'running' ? 'rawResponse.pending' : 'rawResponse.notRecorded')}</p>
+  }
+  return <div className={css.sourceBlocks}>
+    <p className={css.noPayload}>{t('rawResponse.description')}</p>
+    {state.map((response, index) => <section className={css.sourceBlock} key={index}>
+      <div className={css.sourceBlockHeader}>
+        <span className={css.sourceBlockLabel}>{t('rawResponse.label', { index: index + 1, status: response.status })} {response.contentType}</span>
+      </div>
+      {!response.complete && <p role="status">{t('rawResponse.incomplete')}</p>}
+      <ResponseBodyView response={response} t={t} labels={jsonTreeLabels(t)} />
+    </section>)}
+  </div>
 }
 
 function RequestOptions({
@@ -1804,6 +1883,8 @@ export function TrajectoryTable({
   t,
   renderImages,
   requestNumbers: sessionRequestNumbers,
+  loadRequestInput,
+  loadResponseBodies,
   turns,
   streamingCells = [],
   timelineFocusIndexes = null,
@@ -2932,6 +3013,31 @@ export function TrajectoryTable({
                   </OverviewSection>
                 </div>
               </>
+            )}
+            {selectedRequestInfo !== undefined && activeTab === 'input' && (
+              <RequestInput
+                key={selectedRequest?.identity}
+                request={selectedRequestInfo}
+                load={loadRequestInput}
+                t={t}
+              />
+            )}
+            {selectedRequestInfo !== undefined && activeTab === 'output' && (
+              selectedRequestResult === undefined
+                ? <p className={css.noPayload} role="status">{t(selectedRequestState === 'running'
+                  ? 'response.pending' : 'response.unavailable')}</p>
+                : <MarkdownRecordContent
+                  record={selectedRequestResult}
+                  renderImages={renderImages}
+                  rendered={false}
+                  thinkingExpanded={thinkingExpanded}
+                  onThinkingExpandedChange={setThinkingExpanded}
+                  onOpenCall={openCallSummary}
+                  t={t}
+                />
+            )}
+            {selectedRequestInfo !== undefined && activeTab === 'raw-response' && (
+              <RawResponse key={selectedRequest?.identity} request={selectedRequestInfo} load={loadResponseBodies} t={t} />
             )}
             {selectedRequestInfo !== undefined && activeTab === 'options' && (
               <RequestOptions options={selectedRequestOptions} t={t} />

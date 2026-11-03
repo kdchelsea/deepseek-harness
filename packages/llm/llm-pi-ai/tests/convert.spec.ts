@@ -946,6 +946,9 @@ describe('mapStopReason / mapUsage', () => {
     // cause is discarded upstream before it reaches us).
     'terminated',
     'Premature close',
+    'stream_read_error',
+    'STREAM_READ_ERROR',
+    '{"error":{"code":"stream_read_error","message":"upstream read failed"}}',
     // pi-ai's per-provider throws when the wire closes before the terminal event.
     'Anthropic stream ended before message_stop',
     'OpenAI Responses stream ended before a terminal response event',
@@ -954,6 +957,15 @@ describe('mapStopReason / mapUsage', () => {
   ])('maps pi-ai transport wording %j', (errorMessage) => {
     expect(mapStopReason(assistant({ stopReason: 'error', errorMessage })))
       .toMatchObject({ kind: 'error', failure: { code: 'TRANSPORT' } })
+  })
+
+  it.each([
+    ['HTTP 401: stream_read_error', 'AUTH'],
+    ['HTTP 400: stream_read_error', 'INVALID_REQUEST'],
+    ['unknown_stream_read_error_variant', 'PI_AI_ERROR'],
+  ])('preserves error classification for %j', (errorMessage, code) => {
+    expect(mapStopReason(assistant({ stopReason: 'error', errorMessage })))
+      .toMatchObject({ kind: 'error', failure: { code } })
   })
 
   it('uses pi-ai provider-specific overflow classification without losing rate-limit exclusions', () => {

@@ -35,14 +35,14 @@ declare module '@deepseek-ai/cordis' {
      * @param body - serialized provider JSON after adapter transformations.
      * @mode parallel
      */
-    'llm/request-body'(options: GenerateOptions, body: string): Promise<void>
+    'llm/request-body'(options: GenerateOptions<string>, body: string): Promise<void>
     /**
      * Received HTTP body before provider parsing, published when the generation settles.
      * @param options - request identifying the owning Session.
      * @param response - raw UTF-8 body, HTTP metadata, and transport completeness.
      * @mode parallel
      */
-    'llm/response-body'(options: GenerateOptions, response: LlmResponseBody): Promise<void>
+    'llm/response-body'(options: GenerateOptions<string>, response: LlmResponseBody): Promise<void>
 
   }
 }

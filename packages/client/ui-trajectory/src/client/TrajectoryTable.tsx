@@ -1270,7 +1270,7 @@ function SourceBlocks({
             <summary>
               <span className={css.sourceBlockLabel}>
                 {t('block.label', { index: index + 1, type: block.type })}
-                      {block.toolName !== undefined && ` · ${block.toolName}`} 
+                {block.toolName !== undefined && ` · ${block.toolName}`}
               </span>
               <span className={css.attachmentName} title={attachment.name}>
                 {attachment.name}
@@ -1294,7 +1294,7 @@ function SourceBlocks({
                   >
                     <span className={css.sourceBlockLabel}>
                       {t('block.label', { index: index + 1, type: block.type })}
-                      {block.toolName !== undefined && ` · ${block.toolName}`} 
+                      {block.toolName !== undefined && ` · ${block.toolName}`}
                     </span>
                     <IconChevronRightOutlineRegular className={css.sourceBlockJumpIcon} size={12} />
                   </button>
@@ -1303,7 +1303,7 @@ function SourceBlocks({
                   <div className={css.sourceBlockHeader}>
                     <span className={css.sourceBlockLabel}>
                       {t('block.label', { index: index + 1, type: block.type })}
-                      {block.toolName !== undefined && ` · ${block.toolName}`} 
+                      {block.toolName !== undefined && ` · ${block.toolName}`}
                     </span>
                   </div>
                 )}

@@ -5086,7 +5086,7 @@ export const EVENT_API: readonly EventApiEntry[] = [
   {
     name: 'llm/request-body',
     mode: 'parallel',
-    signature: '\'llm/request-body\'(options: GenerateOptions, body: string): Promise<void>',
+    signature: '\'llm/request-body\'(options: GenerateOptions<string>, body: string): Promise<void>',
     summary: 'Observe the serialized provider body immediately before dispatch.',
     description: 'Observe the serialized provider body immediately before dispatch. Headers are excluded. Adapters may publish multiple bodies for transport retries.',
     parameters: [{ name: 'options', description: 'provider-neutral request identifying the owning Session.' }, { name: 'body', description: 'serialized provider JSON after adapter transformations.' }],
@@ -5094,7 +5094,7 @@ export const EVENT_API: readonly EventApiEntry[] = [
   {
     name: 'llm/response-body',
     mode: 'parallel',
-    signature: '\'llm/response-body\'(options: GenerateOptions, response: LlmResponseBody): Promise<void>',
+    signature: '\'llm/response-body\'(options: GenerateOptions<string>, response: LlmResponseBody): Promise<void>',
     summary: 'Received HTTP body before provider parsing, published when the generation settles.',
     description: 'Received HTTP body before provider parsing, published when the generation settles.',
     parameters: [{ name: 'options', description: 'request identifying the owning Session.' }, { name: 'response', description: 'raw UTF-8 body, HTTP metadata, and transport completeness.' }],

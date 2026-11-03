@@ -12,9 +12,9 @@
     - tab "Timing"
   - tabpanel "Response":
     - text: "Block #1 thinking The user wants me to follow a specific navigation scenario. Let me: 1. Run bash to print \"NAVIGATION_OK\" 2. Read nav-a.md and nav-b.md in two read calls in ONE message 3. Reply with \"FIRST_DONE\" Let me start with the bash command and the reads."
-    - 'button "Open Block #2 tool call summary"': "Block #2 tool-call"
+    - 'button "Open Block #2 tool call summary"': "Block #2 tool-call · bash"
     - text: "{\"command\": \"echo NAVIGATION_OK\", \"description\": \"Print NAVIGATION_OK\"}"
-    - 'button "Open Block #3 tool call summary"': "Block #3 tool-call"
+    - 'button "Open Block #3 tool call summary"': "Block #3 tool-call · read"
     - text: "{\"file_path\": \"nav-a.md\"}"
-    - 'button "Open Block #4 tool call summary"': "Block #4 tool-call"
+    - 'button "Open Block #4 tool call summary"': "Block #4 tool-call · read"
     - text: "{\"file_path\": \"nav-b.md\"}"

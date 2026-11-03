@@ -15,6 +15,9 @@ async function setup(value: JsonValue = { answer: 42 }, config: Partial<Config> 
   onTestFinished(() => ctx.fiber.dispose())
   await mountAgentLoopTestDependencies(ctx)
   await ctx.plugin(TypertRegistry)
+  ctx.provide('attachments', {} as never)
+  ctx.provide('connection', { fetch: { register: () => () => {} } } as never)
+  ctx.provide('sessionQuery', {} as never)
   const feature = ctx.plugin(SessionToolResults, config)
   await feature
   const results = ctx.get('sessionToolResults') as SessionToolResults

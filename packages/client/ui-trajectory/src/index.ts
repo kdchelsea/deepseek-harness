@@ -10,6 +10,14 @@ import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import type { SessionToolResultRequest, SessionToolResultValue } from './types.ts'
 
+import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { SessionId } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-llm'
+import type {} from '@deepseek-ai/dsh-attachment'
+import type {} from '@deepseek-ai/dsh-client-connection'
+import type {} from '@deepseek-ai/dsh-session-query'
+import { registerRequestBody } from './request-body.ts'
+
 export type { SessionToolResultRequest, SessionToolResultValue } from './types.ts'
 
 interface LiveResults {
@@ -42,7 +50,7 @@ export default class SessionToolResults extends TypertRemoteService {
    */
   constructor(ctx: Context, config: Config) {
     super(ctx, 'sessionToolResults', { namespace: 'toolResults' })
-    apply(ctx)
+    installCapture(ctx)
     ctx.on('tools/result', (exec, result) => {
       const session = exec.agent?.session
       if (result.isError || session === undefined || ctx.sessions.get(session.id) !== session) return
@@ -127,23 +135,11 @@ export default class SessionToolResults extends TypertRemoteService {
   }
 }
 
-/** Capture provider request bodies for the trajectory inspector. */
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import type { SessionId } from '@deepseek-ai/dsh-session'
-import type {} from '@deepseek-ai/dsh-llm'
-import type {} from '@deepseek-ai/dsh-attachment'
-import type {} from '@deepseek-ai/dsh-client-connection'
-import type {} from '@deepseek-ai/dsh-session-query'
-import { registerRequestBody } from './request-body.ts'
-
-/** Services for durable body storage and authenticated historical reads. */
-export const inject = ['attachments', 'connection', 'sessionQuery']
-
 /**
  * Install request capture for ordinary assistant attempts.
  * @param ctx - plugin context owning capture listeners.
  */
-export function apply(ctx: Context): void {
+function installCapture(ctx: Context): void {
   registerRequestBody(ctx)
   const active = new Map<SessionId, { agent: Agent; turn: number; step: number }>()
   ctx.on('agent/assistant-stream', ({ agent, frame }) => {

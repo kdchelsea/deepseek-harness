@@ -3,7 +3,8 @@ import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import { LlmAttemptId } from '@deepseek-ai/dsh-llm'
-import * as trajectory from '../src/index.ts'
+import TrajectoryPlugin from '../src/index.ts'
+import TypertRegistry from '@deepseek-ai/dsh-typert-registry'
 
 describe('provider request capture', () => {
   it('persists dispatched bodies only within an ordinary assistant attempt and unloads cleanly', async () => {
@@ -19,7 +20,8 @@ describe('provider request capture', () => {
     } as never)
     ctx.provide('connection', { fetch: { register: vi.fn() } } as never)
     ctx.provide('sessionQuery', {} as never)
-    const plugin = ctx.plugin(trajectory)
+    await ctx.plugin(TypertRegistry)
+    const plugin = ctx.plugin(TrajectoryPlugin)
     await plugin
     const session = ctx.sessions.create(SessionId('capture'))
     const agent = { session } as Agent

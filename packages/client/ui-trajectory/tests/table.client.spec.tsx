@@ -1677,6 +1677,8 @@ describe('request response inspector', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Response' }))
     const panel = screen.getByRole('tabpanel', { name: 'Response' })
     expect(Array.from(panel.querySelectorAll('pre'), node => node.textContent)).toEqual(blocks.map(block => block.content))
+    expect(panel.textContent).toContain('Block #1 thinking')
+    expect(panel.textContent).toContain('Block #3 tool-call · bash')
     expect(panel.textContent).not.toContain('ToolError')
     view.rerender(<TrajectoryTable turns={TURNS} {...FOLD_PROPS}
       streamingCells={[{ ...cell, sourceBlocks: [...blocks, { type: 'text', content: 'Finished checking' }] }]} />)

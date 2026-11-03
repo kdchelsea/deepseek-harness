@@ -1,5 +1,5 @@
 /** Plain source display for files without a more specific document renderer. */
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { DocumentPreviewProps } from '../document/contract.ts'
 import { linesOf } from './lines.ts'
 import css from '../TextPreview.module.css'
@@ -10,8 +10,12 @@ export function TextBody({ content, useTabInfo }: DocumentPreviewProps): ReactNo
   const params = tab.navigation.params
   const target = params !== undefined && 'line' in params ? params.line : undefined
   if (content.kind !== 'text') return null
+  const last = content.pages.at(-1)
+  const lastLine = last === undefined ? 1 : last.offset + Math.max(0, last.lines - 1)
+  const numberWidth = `${Math.max(2, String(lastLine).length)}ch`
   return (
-    <div className={css.textDocument} data-textpreview-plain>
+    <div className={css.textDocument} data-textpreview-plain
+      style={{ '--textpreview-line-number-width': numberWidth } as CSSProperties}>
       {content.pages.map(page => (
         <pre key={page.offset} className={css.page} data-textpreview-page={page.offset}>
           {linesOf(page).map((text, index) => {

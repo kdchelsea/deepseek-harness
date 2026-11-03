@@ -126,9 +126,20 @@
   white-space: inherit;
 }
 
-/* The files tree row's 10px side inset, so a line's text sits where a row's does. */
 .line {
+  position: relative;
   padding: 0 10px;
+  padding-inline-start: calc(var(--textpreview-line-number-width) + 22px);
+}
+
+.line::before {
+  position: absolute;
+  inset-inline-start: 10px;
+  width: var(--textpreview-line-number-width);
+  color: var(--dsw-alias-label-secondary);
+  text-align: end;
+  content: attr(data-textpreview-line);
+  user-select: none;
 }
 
 /* A navigated line's mark: a band in the scrollport over the line, so renderer

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dsh-harbor-eval"
+version = "0.1.0"
+description = "Run the DSH headless profile in Harbor task environments"
+requires-python = ">=3.12"
+dependencies = ["harbor==0.25.0"]
+
+[project.scripts]
+dsh-eval = "dsh_harbor.cli:main"
+
+[dependency-groups]
+test = ["pytest==9.0.2"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dsh_harbor"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

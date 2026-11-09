@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write python/harbor-eval/README.md
+/evaluate-dsh-with-harbor:
+  en: 7b11e750a561440f
+  zh: 1288beac2d031ab6
+/evaluate-dsh-with-harbor/summary:
+  en: 56de7e607371f202
+  zh: f3cc0ee8688bf353
+/evaluate-dsh-with-harbor/table-of-contents:
+  en: a521eaf2585af9b5
+  zh: 684217e429574e5f
+/evaluate-dsh-with-harbor/install:
+  en: 5a889fb6216a496a
+  zh: 19a4ce940c183442
+/evaluate-dsh-with-harbor/check-the-integration:
+  en: 65bf640a7084b506
+  zh: 15cc21a79a4b6e26
+/evaluate-dsh-with-harbor/run-a-benchmark:
+  en: 364b6c763dff4462
+  zh: 6d2126e0780b64f5
+/evaluate-dsh-with-harbor/read-results:
+  en: 2c6f7bd4a8e67465
+  zh: 3976baee27fd174d
+/evaluate-dsh-with-harbor/configuration-and-limits:
+  en: ff879913a1ab1518
+  zh: d0e54548241378b2
+/evaluate-dsh-with-harbor/maintain-the-adapter:
+  en: 5f40ade6148f33a6
+  zh: 2a15eedd262d74c0

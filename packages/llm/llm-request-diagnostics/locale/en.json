@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Model request diagnostics",
+    "description": "Record model request progress and retain bounded raw response prefixes."
+  }
+}

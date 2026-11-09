@@ -36,8 +36,8 @@ export function registerRequestBody(ctx: Context): void {
       }
       body += decoder.decode()
       if (target.type === 'trajectory/response') {
-        const { status, contentType, complete } = target.data
-        return Response.json({ body, status, contentType, complete }, { headers: { 'cache-control': 'no-store' } })
+        const { status, contentType, complete, truncated } = target.data
+        return Response.json({ body, status, contentType, complete, ...truncated === undefined ? {} : { truncated } }, { headers: { 'cache-control': 'no-store' } })
       }
       return new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } })
     },

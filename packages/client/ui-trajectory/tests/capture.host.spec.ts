@@ -44,12 +44,12 @@ describe('provider request capture', () => {
       { turn: 2, step: 3, content: [{ type: 'file', attachment: { attachmentId: 'request', name: 'request.json', bytes: body.length } }] },
     ])
     expect(session.deriveMessages()).toEqual([])
-    const response = { body: 'data: {"raw":"你好"}\r\n\r\n', status: 200, contentType: 'text/event-stream', complete: false }
+    const response = { body: 'data: {"raw":"你好"}\r\n\r\n', status: 200, contentType: 'text/event-stream', complete: false, truncated: true }
     const aborted = new AbortController()
     aborted.abort()
     await ctx.parallel('llm/response-body', { ...options, signal: aborted.signal }, response)
     expect(session.snapshotEvents().at(-1)).toMatchObject({ type: 'trajectory/response', data: {
-      turn: 2, step: 3, status: 200, contentType: 'text/event-stream', complete: false,
+      turn: 2, step: 3, status: 200, contentType: 'text/event-stream', complete: false, truncated: true,
     } })
     expect(new TextDecoder().decode(bytes.get('request'))).toBe(response.body)
     expect(session.deriveMessages()).toEqual([])

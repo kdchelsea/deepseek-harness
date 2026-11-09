@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/llm-request-diagnostics/README.md
+/:
+  en: 3f656fff246c8af5
+  zh: 8c59a332c7e3bfed
+/deepseek-ai-dsh-llm-request-diagnostics:
+  en: 4e6bcca556a47046
+  zh: 98392fe425e0962c
+/deepseek-ai-dsh-llm-request-diagnostics/summary:
+  en: ac54add4dab3b346
+  zh: 96886e5c58c6f53e
+/deepseek-ai-dsh-llm-request-diagnostics/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: ab42975cd55c9073
+/deepseek-ai-dsh-llm-request-diagnostics/use-this-package:
+  en: 437d6d2514329a0b
+  zh: a7ebe04afe8606e7
+/deepseek-ai-dsh-llm-request-diagnostics/understand-the-implementation:
+  en: 8a8e15e5b04d0049
+  zh: 8a3f7e61f8d62b5d
+/deepseek-ai-dsh-llm-request-diagnostics/further-exploration:
+  en: aa10c41a6f701dca
+  zh: f8f0e52acf377a5e
+/deepseek-ai-dsh-llm-request-diagnostics/model-experience:
+  en: 5a0883c0083fe683
+  zh: 7d76a181ba9ec58d
+/deepseek-ai-dsh-llm-request-diagnostics/model-experience/kv-cache-effect:
+  en: 9d4430b30171e90f
+  zh: 0a9d13e4e87b39a6
+/deepseek-ai-dsh-llm-request-diagnostics/known-limitations-and-deferred-work:
+  en: 754b50febb31f22f
+  zh: fa44ccd179f63db7
+/deepseek-ai-dsh-llm-request-diagnostics/known-limitations-and-deferred-work/dev-note:
+  en: 0a1253c6f7b5e8b9
+  zh: 9f56528562c7c914

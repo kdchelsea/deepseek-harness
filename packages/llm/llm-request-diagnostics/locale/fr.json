@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Diagnostic des requêtes au modèle",
+    "description": "Enregistre la progression des requêtes au modèle et conserve le début des réponses brutes avec une limite de taille."
+  }
+}

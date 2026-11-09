@@ -35,7 +35,7 @@ export function inspectRequestInput(
  */
 export async function readRequestInput(sessionId: SessionId, seq: SessionSeq, signal: AbortSignal): Promise<TrajectoryRequestInput> {
   const query = new URLSearchParams({ sessionId, seq: String(seq) })
-  const response = await fetch(`${REQUEST_BODY_PATH}?${query}`, { signal })
+  const response = await fetch(`${REQUEST_BODY_PATH.slice(1)}?${query}`, { signal })
   if (!response.ok) throw new Error('Provider request body could not be loaded')
   const body: unknown = await response.json()
   if (body === null || typeof body !== 'object' || Array.isArray(body)) {

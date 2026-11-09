@@ -1962,7 +1962,7 @@ export interface Config extends ProtocolConfig, ModelListingConfig {
 
 - `inject`: `llm`
 - `refs`: `Api` (`@earendil-works/pi-ai`) · `CacheRetention` (`@earendil-works/pi-ai`) · `Model` (`@earendil-works/pi-ai`) · `ModelThinkingLevel` (`@earendil-works/pi-ai`) · `OpenAICompletionsCompat` (`@earendil-works/pi-ai`) · [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts) · `ThinkingBudgets` (`@earendil-works/pi-ai`) · `Transport` (`@earendil-works/pi-ai`) · `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/llm/llm-pi-ai/src/config.ts:222`](../packages/llm/llm-pi-ai/src/config.ts)
+- `source`: [`packages/llm/llm-pi-ai/src/config.ts:226`](../packages/llm/llm-pi-ai/src/config.ts)
 
 ```ts config-catalog
 /** Plugin configuration: the provider routes this instance owns. */
@@ -2051,6 +2051,8 @@ export interface PiAiProviderProfile {
   websocketConnectTimeoutMs?: number
   /** Maximum provider idle time while one stream read is outstanding. */
   streamIdleTimeoutMs?: number
+  /** Aggregate response-preview bytes per generation (default 16 MiB); zero disables capture. */
+  responseCaptureMaxBytes?: number
   /**
    * Maximum base64-encoded image payload per request. When a request's
    * accumulated images exceed it, the oldest images are replaced by text
@@ -2312,6 +2314,28 @@ export interface ReplayModelConfig {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-replay -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-request-diagnostics -->
+<a id="deepseek-aidsh-llm-request-diagnostics"></a>
+
+## `@deepseek-ai/dsh-llm-request-diagnostics`
+
+- `source`: [`packages/llm/llm-request-diagnostics/src/index.ts:14`](../packages/llm/llm-request-diagnostics/src/index.ts)
+
+```ts config-catalog
+/** Disk location, capture limits and progress-record cadence. */
+export interface Config {
+  /** Directory for private metadata and per-reply raw body files. */
+  directory: string
+  /** Milliseconds between progress snapshots; defaults to 5000. */
+  progressIntervalMs: number
+  /** Maximum bytes per metadata file, including reserved terminal records; defaults to 1 MiB. */
+  maxFileBytes: number
+  /** Total captured response bytes per invocation; defaults to 16 MiB, zero disables capture. */
+  maxResponseBodyBytes: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-request-diagnostics -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-retry -->
 <a id="deepseek-aidsh-llm-retry"></a>

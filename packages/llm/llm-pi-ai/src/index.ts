@@ -240,6 +240,7 @@ export function apply(ctx: Context, config: Config): void {
     resolveApiKey,
     onRequestBody: (options, body) => ctx.parallel('llm/request-body', options, body),
     onResponseBody: (options, body) => ctx.parallel('llm/response-body', options, body),
+    createDiagnostics: options => ctx.waterfall('llm/request-diagnostics', options, () => undefined),
     auth,
     prepareHeaders: (request, headers) => ctx.waterfall('llm-pi-ai/request-headers', request, headers, () => headers),
     resolveAttachments: () => ctx.get('attachments'),

@@ -627,8 +627,10 @@ export interface LlmResponseBody {
   status: number
   /** Content-Type header, or an empty string when absent. */
   contentType: string
-  /** UTF-8 text received before provider parsing. */
+  /** UTF-8 text received before provider parsing, limited to the retained prefix when truncated. */
   body: string
-  /** Whether the transport reached EOF; false denotes only a received prefix. */
+  /** Whether the transport reached EOF, independent of preview truncation. */
   complete: boolean
+  /** Whether the preview budget omitted received content; absent or false means no budget truncation. */
+  truncated?: boolean
 }

@@ -731,6 +731,30 @@ describe('web e2e: navigation & panes over a rich seeded session', () => {
     }
   }, 60_000)
 
+  it.skipIf(MODE === 'record').each([true, false])('shows a bounded raw response prefix with complete=%s', async (complete) => {
+    await page.route('**/api/trajectory.response-body?*', route => route.fulfill({
+      json: { body: RAW_RESPONSE_BODY, status: 200, contentType: 'text/event-stream', complete, truncated: true },
+    }))
+    try {
+      await ensureSeedOpen(page)
+      await page.getByPlaceholder('Search session names', { exact: false }).fill('RawResponseFixture')
+      const result = page.getByRole('tree', { name: 'Search results' }).getByRole('treeitem')
+      await expect.poll(() => result.count()).toBe(1)
+      await result.click()
+      await page.getByRole('tab', { name: 'Trajectory' }).click()
+      await page.getByRole('button', { name: 'Request #1', exact: true }).click()
+      const details = page.getByRole('complementary', { name: 'Event details' })
+      await details.getByRole('tab', { name: 'Raw response', exact: true }).click()
+      await details.getByText('The preview reached its size limit; only the retained response prefix is shown.', { exact: true }).waitFor()
+      const incomplete = details.getByText('The response was not fully read; only the received content is shown.', { exact: true })
+      await expect.poll(() => incomplete.count()).toBe(complete ? 0 : 1)
+      await details.getByRole('button', { name: 'Original text', exact: true }).click()
+      expect(await details.locator('pre').textContent()).toBe(RAW_RESPONSE_BODY)
+    } finally {
+      await page.unroute('**/api/trajectory.response-body?*')
+    }
+  }, 60_000)
+
   it.skipIf(MODE === 'record')('keeps the recorded fixture inventory exact', async () => {
     await assertFixtureInventory(CODE_CARD_DIR, [
       'code-card.expected.md', 'command-wrap.expected.md', 'copy-markdown.expected.md',

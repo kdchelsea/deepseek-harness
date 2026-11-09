@@ -2,12 +2,12 @@ import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
 import { registerRequestBody } from '../src/request-body.ts'
 
-async function fixture(responseBody = false) {
+async function fixture(responseBody = false, truncated?: boolean) {
   const ctx = new Context()
   let handle: ((request: Request) => Promise<Response>) | undefined
   const ref = { attachmentId: 'request', name: 'request.json', bytes: 1 }
   const readEvent = vi.fn(async () => ({ target: { type: responseBody ? 'trajectory/response' : 'trajectory/request', data: {
-    content: [{ type: 'file', attachment: ref }], status: 429, contentType: 'text/plain', complete: false,
+    content: [{ type: 'file', attachment: ref }], status: 429, contentType: 'text/plain', complete: false, ...truncated === undefined ? {} : { truncated },
   } } }))
   const body = '{"messages":[{"role":"user","content":"你好"}],"max_tokens":42}'
   const readFileStream = vi.fn(async function* () {
@@ -36,10 +36,10 @@ describe('request body route', () => {
     await ctx.fiber.dispose()
   })
 
-  it('returns raw response metadata and UTF-8 text from its Session reference', async () => {
-    const { ctx, handle, body } = await fixture(true)
+  it.each([undefined, false, true])('returns optional truncation %s and UTF-8 text from its Session reference', async (truncated) => {
+    const { ctx, handle, body } = await fixture(true, truncated)
     const response = await handle(new Request('http://localhost/api/trajectory.response-body?sessionId=s&seq=7'))
-    expect(await response.json()).toEqual({ body, status: 429, contentType: 'text/plain', complete: false })
+    expect(await response.json()).toEqual({ body, status: 429, contentType: 'text/plain', complete: false, ...truncated === undefined ? {} : { truncated } })
     await ctx.fiber.dispose()
   })
 

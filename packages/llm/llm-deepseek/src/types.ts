@@ -1,5 +1,5 @@
 /** Model catalog and request-local dependencies for DeepSeek Messages. */
-import type { GenerateOptions, LlmResponseBody, LlmModelInfo, ModelModality, SystemPromptUpdate, ToolUpdate, ResolvedRetryPolicy, ImageAttachmentAccess } from '@deepseek-ai/dsh-llm'
+import type { GenerateOptions, LlmRequestDiagnostics, LlmResponseBody, LlmModelInfo, ModelModality, SystemPromptUpdate, ToolUpdate, ResolvedRetryPolicy, ImageAttachmentAccess } from '@deepseek-ai/dsh-llm'
 import type { AttachmentStore, ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import type { AnonymousUserId } from '@deepseek-ai/dsh-anonymous-user-id'
 import type { DeepSeekLlmApiExtensionRequest, PreparedDeepSeekLlmApiExtensions } from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
@@ -61,6 +61,8 @@ export interface DeepSeekConnectionOptions {
   models: readonly DeepSeekCatalogModel[]
   /** Maximum provider idle time while one stream read is outstanding. */
   streamIdleTimeoutMs: number
+  /** Aggregate response-preview bytes per generation; zero disables capture. */
+  responseCaptureMaxBytes: number
   /** Maximum accumulated file-referenced image bytes in one request. */
   maxRequestFilesBytes: number
   /** Maximum accumulated base64 image payload after Files API fallback. */
@@ -95,6 +97,8 @@ export interface DeepSeekAdapterOptions<Connection extends DeepSeekConnectionOpt
   onRequestBody?: (options: GenerateOptions<string>, body: string) => void | Promise<void>
   /** Observe consumed HTTP bodies; omission disables response capture. */
   onResponseBody?: (options: GenerateOptions<string>, response: LlmResponseBody) => void | Promise<void>
+  /** Create a per-call metadata observer; omission leaves diagnostics disabled. */
+  createDiagnostics?: (options: GenerateOptions<string>) => LlmRequestDiagnostics | undefined
   /** Report unusable native Messages replay metadata without exposing content or signatures. */
   onReplayDegrade?: (detail: { provider: string; model: string; reason: string }) => void
   /** Report extension fields omitted from one request because the merged request failed to serialize. */

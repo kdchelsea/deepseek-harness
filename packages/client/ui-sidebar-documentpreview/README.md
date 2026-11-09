@@ -52,6 +52,8 @@ Coding Tools selects the HTML preview policy in both Web and desktop. The render
 
 Both HTML modes set the initial iframe name to `dsh-sidebar-html-<tab-id>` for Desktop shortcut routing. This correlation does not grant the preview access to the parent document.
 
+Files ending in `.response.bin` select the paged plain-text viewer, allowing UTF-8 SSE response diagnostics to open directly from file links. The text reader still rejects NUL-containing or invalidly encoded content; other `.bin` files remain unsupported. Reading the file to its current end does not imply that the underlying model response completed.
+
 The body reads its record, navigation and lifetime through `useTabInfo().tab`. `useResource<'file'>(tab.contentId)` supplies metadata; ordinary inject callbacks supply content reads:
 
 - The resource snapshot contains only `status`, `value`, and `failure`; `value` is `WorkspaceFileStat` metadata. Content reads do not wait for the first metadata frame once the provider is available. Observation failures take precedence over Preview's change notice; loaded content remains while metadata is unavailable.

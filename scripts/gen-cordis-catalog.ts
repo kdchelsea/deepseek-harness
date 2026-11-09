@@ -419,6 +419,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   SessionChangeRequestsListener: 'forge.md',
   GenerateOptions: 'llm-streaming.md',
   LlmResponseBody: 'llm-streaming.md',
+  LlmRequestDiagnostics: 'llm-streaming.md',
   Inbox: 'core.md',
   InboxItem: 'core.md',
   InboxPlacement: 'core.md',

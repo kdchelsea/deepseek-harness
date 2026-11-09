@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Diagnóstico de solicitudes al modelo",
+    "description": "Registra el progreso de las solicitudes al modelo y conserva el inicio de las respuestas originales con un límite de tamaño."
+  }
+}

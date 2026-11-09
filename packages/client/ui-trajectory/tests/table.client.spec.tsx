@@ -1712,6 +1712,16 @@ describe('request response inspector', () => {
 
 
 describe('raw response inspector', () => {
+  it.each([true, false])('labels preview truncation separately from transport completeness %s', async (complete) => {
+    const load = vi.fn().mockResolvedValue([{ status: 200, contentType: 'text/plain', body: 'prefix', complete, truncated: true }])
+    render(<TrajectoryTable turns={TURNS} {...FOLD_PROPS} loadResponseBodies={load} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Request #1' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Raw response' }))
+    await screen.findByText('The preview reached its size limit; only the retained response prefix is shown.')
+    expect(screen.queryByText('The response was not fully read; only the received content is shown.') !== null).toBe(!complete)
+    expect(screen.getByText('prefix')).toBeTruthy()
+  })
+
   it('renders every HTTP response verbatim and reloads after the request settles', async () => {
     const raw = 'event: content_block_delta\r\ndata: {"text":"你好"}\r\n\r\n'
     const load = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([

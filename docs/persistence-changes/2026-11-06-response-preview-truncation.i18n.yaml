@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-06-response-preview-truncation.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-06-response-preview-truncation.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-06-response-preview-truncation:
+  en: f73ec7fed1201e2d
+  zh: 81f9ef449e5523df
+/2026-11-06-response-preview-truncation/summary:
+  en: 9b4d9df605f2ae39
+  zh: 911fdf0efcd22086
+/2026-11-06-response-preview-truncation/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-06-response-preview-truncation/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-06-response-preview-truncation/compatibility:
+  en: f77ab82b8e628b64
+  zh: 161a7d1b25fac620
+/2026-11-06-response-preview-truncation/verification:
+  en: 1524eec2ad2ece48
+  zh: 4221787b4fe8faee
+/2026-11-06-response-preview-truncation/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

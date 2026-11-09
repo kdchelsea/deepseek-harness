@@ -33,7 +33,9 @@ kind: "package-reference"
 
 适配器将 pi-ai 的服务商请求体回调通过 `llm/request-body` 转发为序列化 JSON，不替换请求体，也不包含 HTTP 请求头。
 
-原始 HTTP 响应采集通过每次调用的 fetch 注入支持 Anthropic Messages、OpenAI Completions/Responses/Codex Responses、Azure Responses、Mistral Conversations 和 Pi Messages。生成结束时通过 `llm/response-body` 发布未经解析的 JSON/SSE，包括 HTTP 错误和不完整的前缀。不采集 Google、Bedrock 和 WebSocket 响应；采集不会改变所选传输方式。
+原始 HTTP 响应采集通过每次调用的 fetch 注入支持 Anthropic Messages、OpenAI Completions/Responses/Codex Responses、Azure Responses、Mistral Conversations 和 Pi Messages。生成结束时通过 `llm/response-body` 发布未经解析的 JSON/SSE 预览，包括 HTTP 错误和不完整的前缀。每个提供方 profile 接受 `responseCaptureMaxBytes`：非负安全整数，限制一次生成中所有 HTTP 响应的预览总字节数（默认 16 MiB；零禁用预览）。预算截断保留完整 UTF-8 字符，并设置 `truncated`；`complete` 独立表示 EOF。不采集 Google、Bedrock 和 WebSocket 响应；采集不会改变所选传输方式或模型输出。
+
+[请求诊断插件](../llm-request-diagnostics/README.zh.md) 在凭据解析前观察每次调用，记录规范化分片进展，并对上述支持 fetch 注入的协议观察 HTTP 发送及已消费字节。未观察到 fetch 时，HTTP 进展属于未知；不能仅凭 HTTP 计数为零就判定 WebSocket 或由提供方管理的传输已经停滞。诊断不会改变所选传输、重试策略或模型内容。
 
 ### 何时选择
 

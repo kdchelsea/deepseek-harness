@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Diagnose von Modellanfragen",
+    "description": "Zeichnet den Fortschritt von Modellanfragen auf und speichert den Anfang der Rohantworten mit einer Größenbegrenzung."
+  }
+}

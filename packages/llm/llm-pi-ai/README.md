@@ -33,7 +33,9 @@ The adapter accepts the LLM service's [request-only user inputs](../llm/README.m
 
 The adapter forwards pi-ai’s provider payload callback through `llm/request-body` as serialized JSON, without replacing the payload. HTTP headers are excluded.
 
-Raw HTTP response capture uses per-call fetch injection for Anthropic Messages, OpenAI Completions/Responses/Codex Responses, Azure Responses, Mistral Conversations, and Pi Messages. It publishes unparsed JSON/SSE through `llm/response-body` when generation settles, including HTTP errors and incomplete prefixes. Google, Bedrock, and WebSocket responses are not captured; capture does not change the selected transport.
+Raw HTTP response capture uses per-call fetch injection for Anthropic Messages, OpenAI Completions/Responses/Codex Responses, Azure Responses, Mistral Conversations, and Pi Messages. It publishes unparsed JSON/SSE previews through `llm/response-body` when generation settles, including HTTP errors and incomplete prefixes. Each provider profile accepts `responseCaptureMaxBytes`: a non-negative safe integer bounding total preview bytes across all HTTP replies in one generation (default 16 MiB; zero disables previews). Budget cuts retain complete UTF-8 characters and set `truncated`; `complete` independently reports EOF. Google, Bedrock, and WebSocket responses are not captured; capture does not change the selected transport or model output.
+
+The [request diagnostics plugin](../llm-request-diagnostics/README.md) observes each invocation before credential resolution, records normalized chunk progress, and observes HTTP dispatch and consumed bytes for the fetch-injectable protocols above. Without an observed fetch, HTTP progress is unknown; WebSocket or provider-managed transport must not be diagnosed as idle solely from zero HTTP counters. Diagnostics never change the selected transport, retry policy, or model content.
 
 ### When to choose it
 

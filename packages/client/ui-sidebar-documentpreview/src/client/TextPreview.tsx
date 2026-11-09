@@ -83,7 +83,7 @@ export function TextPreview({
     if (matched.length > 0 && binaryDocumentPath(definitions, file.path)) return matched
     if (matched.length === 0 && unviewable) return matched
     const fallback = definitions.find(definition => definition.id === PLAIN_BODY_ID)
-    return fallback === undefined ? matched : [...matched, fallback]
+    return fallback === undefined || matched.includes(fallback) ? matched : [...matched, fallback]
   }, [definitions, file.path, unviewable])
   const selected = candidates.find(candidate => candidate.id === state?.rendererId) ?? candidates[0]
   const mode = selected?.loading

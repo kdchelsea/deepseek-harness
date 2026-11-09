@@ -5092,6 +5092,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'options', description: 'provider-neutral request identifying the owning Session.' }, { name: 'body', description: 'serialized provider JSON after adapter transformations.' }],
   },
   {
+    name: 'llm/request-diagnostics',
+    mode: 'waterfall',
+    signature: '\'llm/request-diagnostics\'(options: GenerateOptions<string>, next: () => LlmRequestDiagnostics | undefined): LlmRequestDiagnostics | undefined',
+    summary: 'Create a progress and bounded response observer for one adapter invocation, including retries.',
+    description: 'Create a progress and bounded response observer for one adapter invocation, including retries. Listeners must call next(); the default supplies no observer. Observation must not change model output or propagate logging failures into the call.',
+    parameters: [{ name: 'options', description: 'request attribution; message and tool content must not be logged.' }, { name: 'next', description: 'delegate to the next observer provider.' }],
+  },
+  {
     name: 'llm/response-body',
     mode: 'parallel',
     signature: '\'llm/response-body\'(options: GenerateOptions<string>, response: LlmResponseBody): Promise<void>',
@@ -6984,6 +6992,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface LlmReasoningEffortInfo {\n    id: ReasoningEffortId;\n    name: string;\n    description?: string;\n}',
   },
   {
+    name: 'LlmRequestDiagnosticOutcome',
+    declaration: 'export type LlmRequestDiagnosticOutcome = \'completed\' | \'error\' | \'aborted\' | \'consumer-stopped\';',
+  },
+  {
+    name: 'LlmRequestDiagnostics',
+    declaration: 'export interface LlmRequestDiagnostics {\n    fetch: typeof globalThis.fetch;\n    chunk(chunk: StreamChunk): void;\n    finish(outcome: LlmRequestDiagnosticOutcome, errorCode?: string): void;\n}',
+  },
+  {
     name: 'LlmRequestPurpose',
     declaration: 'export type LlmRequestPurpose = Extract<keyof LlmRequestPurposeMap, string>;',
   },
@@ -6997,7 +7013,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'LlmResponseBody',
-    declaration: 'export interface LlmResponseBody {\n    status: number;\n    contentType: string;\n    body: string;\n    complete: boolean;\n}',
+    declaration: 'export interface LlmResponseBody {\n    status: number;\n    contentType: string;\n    body: string;\n    complete: boolean;\n    truncated?: boolean;\n}',
   },
   {
     name: 'LlmRuntime',

@@ -35,7 +35,9 @@ kind: "package-reference"
 
 适配器在合并 API 扩展字段并确定图片表示后，通过 `llm/request-body` 发布序列化后的完整对话请求。每次图片回退发送都会发布对应请求体，不包含 HTTP 请求头。
 
-适配器通过 `llm/response-body` 捕获原始 HTTP 响应正文，包括 SSE 帧与 HTTP 错误 JSON。生成结束时发布每次 HTTP 响应；提前终止会将捕获的前缀标为不完整。
+适配器通过 `llm/response-body` 捕获原始 HTTP 响应预览，包括 SSE 帧与 HTTP 错误 JSON。`responseCaptureMaxBytes` 限制一次生成中所有 HTTP 响应的预览总字节数，默认为 16 MiB；零禁用预览采集。生成结束时发布每次响应。预算截断保留完整 UTF-8 字符组成的前缀，并设置 `truncated`；`complete` 独立表示传输是否到达 EOF。模型输出与消费行为保持不变。
+
+[请求诊断插件](../llm-request-diagnostics/README.zh.md) 逐次记录调用准备、推理 HTTP 发送、响应头、已消费字节进展、规范化分片和终态，不保留正文。Files API 上传和模型发现请求不在观察范围内；仍在准备图片或凭据的调用尚未出现可观察的推理 fetch。每次推理 HTTP 回退使用独立的交换序号。
 
 ### 何时选择
 
@@ -67,6 +69,7 @@ kind: "package-reference"
 | `defaultContextWindow` | `1,000,000` | 无精确值模型的容量回退 |
 | `models` | V4.1 Flash + V4 Pro | 供发现消费方查看的建议性目录 |
 | `streamIdleTimeoutMs` | `300,000` | 单次流读取未完成的最大提供方空闲时间 |
+| `responseCaptureMaxBytes` | `16 MiB` | 每次生成的预览总字节上限；非负安全整数，零禁用采集 |
 | `maxRequestFilesBytes` | `128 MiB` | file 模式请求图片字节预算，保留图片超过时请求以 `IMAGE_OFFLOAD_REQUIRED` 失败 |
 | `maxInlineRequestImageBytes` | `20 MiB` | 独立的 base64 回退高水位 |
 | `maxImagesPerRequest` | `600` | 保留请求图片数量的高水位 |

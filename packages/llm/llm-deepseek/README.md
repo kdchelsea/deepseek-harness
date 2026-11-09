@@ -35,7 +35,9 @@ The adapter accepts the LLM service's [request-only user inputs](../llm/README.m
 
 The adapter publishes the exact serialized chat request through `llm/request-body` after merging API extensions and resolving image representations. Each image fallback dispatch publishes its own body. HTTP headers are excluded.
 
-The adapter captures raw HTTP response bodies through `llm/response-body`, including SSE framing and HTTP error JSON. Each HTTP response is published when generation settles; early termination marks the captured prefix incomplete.
+The adapter captures raw HTTP response previews through `llm/response-body`, including SSE framing and HTTP error JSON. `responseCaptureMaxBytes` limits the total preview bytes across all HTTP replies in one generation to 16 MiB by default; zero disables preview capture. Each response is published when generation settles. Budget truncation retains a UTF-8-safe prefix and sets `truncated`; `complete` independently reports transport EOF. Model output and consumption remain unchanged.
+
+The [request diagnostics plugin](../llm-request-diagnostics/README.md) records per-call preparation, inference HTTP dispatch, response headers, consumed-byte progress, normalized chunks, and terminal outcomes without retaining content. Files API uploads and discovery requests are outside this observation; a call still preparing images or credentials has no observed inference fetch. Each inference HTTP fallback has its own exchange ordinal.
 
 ### When to choose it
 
@@ -67,6 +69,7 @@ A request selects the route with `provider: deepseek-official`; the model id pas
 | `defaultContextWindow` | `1,000,000` | Capacity fallback for models without an exact value |
 | `models` | V4.1 Flash + V4 Pro | Advisory catalog shown by discovery consumers |
 | `streamIdleTimeoutMs` | `300,000` | Maximum provider idle time per outstanding stream read |
+| `responseCaptureMaxBytes` | `16 MiB` | Aggregate preview byte limit per generation; non-negative safe integer, zero disables capture |
 | `maxRequestFilesBytes` | `128 MiB` | File-mode request-image byte budget; a request whose retained images exceed it fails with `IMAGE_OFFLOAD_REQUIRED` |
 | `maxInlineRequestImageBytes` | `20 MiB` | Independent base64 fallback high watermark |
 | `maxImagesPerRequest` | `600` | High watermark for retained request-image count |

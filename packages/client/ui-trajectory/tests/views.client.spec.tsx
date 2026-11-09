@@ -519,8 +519,8 @@ describe('plugin registration', () => {
   it('loads missing input history and reports a page that makes no progress', async () => {
     const b = await bench()
     const entry = b.slots.entries('conversation.view').find(candidate => candidate.options.id === 'trajectory')!
-    const injectEntry = entry.inject as unknown as (sessionId: SessionId) => TrajectoryViewInjected
-    const injected = injectEntry(SID)
+    if (entry.inject === undefined) throw new Error('Trajectory injection is unavailable')
+    const injected = Reflect.apply(entry.inject, undefined, [SID]) as TrajectoryViewInjected
     const controller = new AbortController()
     expect(await injected.loadRequestInput(1, 1, controller.signal)).toBeNull()
     expect(b.loadOlder).not.toHaveBeenCalled()

@@ -73,7 +73,7 @@ Agent-loop 测试固定先持久后 end 的顺序、中断的可见前缀、失�
 
 当前日志、遥测与历史页按模型 attempt 而非 token chunk 扩展，同时在每个 settlement 内保留精确 stream 证据。Client event window 保留这份紧凑证据，但 Chat 与 Trajectory 的 Assistant node 不会把 settled stream 展开成逐 delta 对象。实时呈现保持增量，并且有意仅存在于进程内。
 
-v1 的顶层 chunk 可能在 attempt 结束前由带缓冲的持久化 writer 刷盘；与之不同，v2 在 settlement 之前没有持久 attempt 证据。如果进程或主机在 settlement 前硬中断，完整的 in-flight stream 都会丢失；`agent/assistant-stream` 不是 write-ahead log。这项取舍避免为实时输出增加第二个持久性 owner。
+v1 的顶层 chunk 可能在 attempt 结束前由带缓冲的持久化 writer 刷盘；与之不同，v2 在 settlement 之前没有持久 attempt 正文。如果进程或主机在 settlement 前硬中断，完整的 in-flight stream 都会丢失；`agent/assistant-stream` 不是 write-ahead log。这项取舍避免为实时输出增加第二个持久性 owner。[独立请求诊断](2026-11-04-model-request-diagnostics.zh.md) 在 settlement 前保留进展元数据，但不能重建丢失的流内容。
 
 一个 settlement 可能很大，v1 到 v2 迁移会物化完整产物及其序号映射。封闭的 Alpha 清单会拒绝未知 v1 事件与未声明引用，而不会猜测。需要单独 chunk 的消费方调用 `expandAssistantStream()`，并且绝不能从 `agent/assistant-stream` 推断持久性。
 

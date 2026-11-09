@@ -33,7 +33,9 @@ kind: "package-reference"
 
 适配器可在发送前通过 `llm/request-body` 发布序列化后的服务商 JSON。该诊断事件不包含 HTTP 请求头，也不改变请求或输出流。消费者决定是否持久化；轨迹 Host 插件记录普通助手请求。
 
-适配器在消费后通过 `llm/response-body` 发布原始 UTF-8 HTTP 正文、状态、Content-Type 和 EOF 完整标志。`createResponseCapture` 在 JSON 或 SSE 解析前观察字节，不提前读取。fetch 负责传输解压缩；除 Content-Type 外不包含响应头。中断的响应仅保留已收到的前缀。消费者可在模型历史之外持久化这些诊断数据。
+适配器在消费后通过 `llm/response-body` 发布保留的 UTF-8 HTTP 前缀、状态、Content-Type 和 EOF 完整标志。`createResponseCapture(publish, maxBytes)` 限制一次生成中所有响应的预览总字节数，默认为 16 MiB，设为零时禁用采集。它在 JSON 或 SSE 解析前观察字节，不提前读取，也不改变交付给提供方消费者的字节。截断保留完整的 UTF-8 字符。可选的 `truncated: true` 独立表示预算导致的省略；`complete` 仍仅表示 EOF，`truncated` 缺省或为 false 表示未因预算截断。fetch 负责传输解压缩；除 Content-Type 外不包含响应头。消费者可在模型历史之外持久化这些诊断数据。
+
+适配器可通过 `llm/request-diagnostics` 为每次调用获取独立观察器。其 fetch 包装器在提供方消费字节时记录 HTTP 进展；`withRequestDiagnostics` 观察规范化分片，并在适配器清理后结束诊断。观察器必须隔离日志失败，且不得保留请求或响应正文。[请求诊断插件](../llm-request-diagnostics/README.zh.md) 独立于 Session 流结算写入有界元数据检查点，不改变重试策略或模型可见历史。
 
 ### 何时选择
 

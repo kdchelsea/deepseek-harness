@@ -42,6 +42,7 @@ import {
 import type { FileAttachmentRef, ImageAttachmentRef, ImageRequestTarget } from '@deepseek-ai/dsh-attachment'
 
 export * from './response-capture.ts'
+export * from './request-diagnostics.ts'
 export * from './attribution.ts'
 export * from './brand.ts'
 export * from './error.ts'

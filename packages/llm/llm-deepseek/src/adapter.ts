@@ -1,7 +1,7 @@
 /** Direct Messages transport with one cancellable lifecycle per model request. */
 
-import { attributionHeaders, createResponseCapture, LlmAdapter, LlmError } from '@deepseek-ai/dsh-llm'
-import type { GenerateOptions, ImageAttachmentAccessResolver, PreparedAdapterCall, StreamChunk } from '@deepseek-ai/dsh-llm'
+import { attributionHeaders, createResponseCapture, LlmAdapter, LlmError, withRequestDiagnostics } from '@deepseek-ai/dsh-llm'
+import type { GenerateOptions, ImageAttachmentAccessResolver, LlmRequestDiagnostics, PreparedAdapterCall, StreamChunk } from '@deepseek-ai/dsh-llm'
 import type { DeepSeekLlmApiExtensionRequest, DeepSeekLlmApiJson } from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
 import { idleWatchdog, timeoutOf } from '@deepseek-ai/dsh-timeout'
 import { modelInfo } from './model-info.ts'
@@ -63,12 +63,19 @@ export class DeepSeekAdapter<C extends Connection = Connection> extends LlmAdapt
   }
 
   private async * generate(options: GenerateOptions<string>, connection: C): AsyncGenerator<StreamChunk> {
+    const diagnostics = this.dependencies.createDiagnostics?.(options)
+    yield* withRequestDiagnostics(options, diagnostics, this.generateObserved(options, connection, diagnostics))
+  }
+
+  private async * generateObserved(
+    options: GenerateOptions<string>, connection: C, diagnostics: LlmRequestDiagnostics | undefined,
+  ): AsyncGenerator<StreamChunk> {
     const capture = createResponseCapture(this.dependencies.onResponseBody === undefined
-      ? undefined : body => this.dependencies.onResponseBody?.(options, body))
+      ? undefined : body => this.dependencies.onResponseBody?.(options, body), connection.responseCaptureMaxBytes)
     const consumer = new AbortController()
     const signal = options.signal === undefined ? consumer.signal : AbortSignal.any([consumer.signal, options.signal])
     using watchdog = idleWatchdog(signal, connection.streamIdleTimeoutMs, 'MESSAGES_IDLE')
-    const iterator = this.request(options, connection, watchdog.signal, () => { watchdog.pulse() }, capture)
+    const iterator = this.request(options, connection, watchdog.signal, () => { watchdog.pulse() }, capture, diagnostics?.fetch ?? fetch)
     try {
       while (true) {
         const next = await watchdog.next(iterator)
@@ -93,7 +100,7 @@ export class DeepSeekAdapter<C extends Connection = Connection> extends LlmAdapt
 
   private async * request(
     options: GenerateOptions<string>, connection: C, signal: AbortSignal, activity: () => void,
-    capture: ReturnType<typeof createResponseCapture>,
+    capture: ReturnType<typeof createResponseCapture>, fetchRequest: typeof fetch,
   ): AsyncGenerator<StreamChunk> {
     signal.throwIfAborted()
     const { messages, versions } = await prepareImages(
@@ -144,7 +151,7 @@ export class DeepSeekAdapter<C extends Connection = Connection> extends LlmAdapt
             : [],
         ]
         await this.dependencies.onRequestBody?.(options, extensions.payload)
-        const response = capture.wrap(await fetch(`${messagesApiRoot(connection.baseURL)}/messages`, {
+        const response = capture.wrap(await fetchRequest(`${messagesApiRoot(connection.baseURL)}/messages`, {
           method: 'POST', signal, body: extensions.payload, redirect: 'error',
           headers: {
             ...attributionHeaders(),

@@ -1,0 +1,20 @@
+{
+  "formatVersion": 2,
+  "roots": [
+    {"key":"event:trajectory/response","kind":"event","event":"trajectory/response","surface":false,"digest":"e52de9dd97436f3de9ba0d43d2c86f7379644e3a88c5e40e0b672b1cb2b86f40"}
+  ],
+  "types": [],
+  "nodes": {
+    "0657d3ca5ac4e7bf": {"kind":"primitive","type":"number"},
+    "277b61f9c6f81704": {"kind":"literal","value":"file"},
+    "4cd48f3e5108bd6e": {"kind":"primitive","type":"string"},
+    "638f1b4de664aad2": {"kind":"object","properties":[{"name":"complete","type":"aa93010d0e521ad7","optional":false},{"name":"content","type":"9fb620ef678d0e39","optional":false},{"name":"contentType","type":"4cd48f3e5108bd6e","optional":false},{"name":"status","type":"0657d3ca5ac4e7bf","optional":false},{"name":"step","type":"0657d3ca5ac4e7bf","optional":false},{"name":"truncated","type":"aa93010d0e521ad7","optional":true},{"name":"turn","type":"0657d3ca5ac4e7bf","optional":false}],"indices":[]},
+    "9fb620ef678d0e39": {"kind":"tuple","elements":[{"type":"f2da0f27c1e6add5","optional":false,"rest":false}]},
+    "aa93010d0e521ad7": {"kind":"primitive","type":"boolean"},
+    "d649ec62c4d1cc07": {"kind":"literal","value":"trajectory/response"},
+    "dacf3d5f3e4ff619": {"kind":"literal","value":true},
+    "e52de9dd97436f3d": {"kind":"object","properties":[{"name":"data","type":"638f1b4de664aad2","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"d649ec62c4d1cc07","optional":false}],"indices":[]},
+    "f19bee84bf3d2090": {"kind":"object","properties":[{"name":"attachmentId","type":"4cd48f3e5108bd6e","optional":false},{"name":"bytes","type":"0657d3ca5ac4e7bf","optional":false},{"name":"name","type":"4cd48f3e5108bd6e","optional":false}],"indices":[]},
+    "f2da0f27c1e6add5": {"kind":"object","properties":[{"name":"attachment","type":"f19bee84bf3d2090","optional":false},{"name":"type","type":"277b61f9c6f81704","optional":false}],"indices":[]}
+  }
+}

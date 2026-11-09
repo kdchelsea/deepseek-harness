@@ -10,6 +10,7 @@ import type {
   StoredImageAttachment,
 } from '@deepseek-ai/dsh-attachment'
 import LlmRuntime, { createToolResultMessage, createUserMessage, CONTEXT_WINDOW_EXCEEDED_CODE, LlmError, ReasoningEffortId, userAgent } from '@deepseek-ai/dsh-llm'
+import type { GenerateOptions, LlmRequestDiagnostics, LlmResponseBody } from '@deepseek-ai/dsh-llm'
 import * as LlmPiAi from '@deepseek-ai/dsh-llm-pi-ai'
 import { PiAiAdapter } from '@deepseek-ai/dsh-llm-pi-ai'
 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
@@ -74,6 +75,57 @@ beforeEach(() => {
 })
 
 describe('PiAiAdapter provider routing', () => {
+  it('observes HTTP dispatch and parsed chunks through the diagnostics extension', async () => {
+    const server = await mockServer([{ events: textEvents }])
+    const ctx = await harness(server.url)
+    onTestFinished(() => ctx.fiber.dispose())
+    const wire = vi.fn((input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => fetch(input, init))
+    const chunk = vi.fn()
+    const finish = vi.fn()
+    const create = vi.fn((_options: GenerateOptions<string>, next: () => LlmRequestDiagnostics | undefined) => {
+      expect(next()).toBeUndefined()
+      return { fetch: wire, chunk, finish }
+    })
+    ctx.on('llm/request-diagnostics', create)
+    const result = await assemble(ctx, { model: 'deepseek-flash', messages: [] })
+    expect(result.message.content).toEqual([{ type: 'text', text: 'hello' }])
+    expect(create).toHaveBeenCalledOnce()
+    expect(wire).toHaveBeenCalledOnce()
+    expect(chunk).toHaveBeenCalledWith(expect.objectContaining({ type: 'finish', reason: { kind: 'stop' } }))
+    expect(finish).toHaveBeenCalledExactlyOnceWith('completed', undefined)
+  })
+
+  it.each([0, 8])('honors responseCaptureMaxBytes=%i without shortening model output', async (responseCaptureMaxBytes) => {
+    const server = await mockServer([{ events: textEvents }])
+    const ctx = await harness(server.url, { responseCaptureMaxBytes })
+    onTestFinished(() => ctx.fiber.dispose())
+    const onResponseBody = vi.fn<(options: GenerateOptions<string>, response: LlmResponseBody) => Promise<void>>(async () => {})
+    ctx.on('llm/response-body', onResponseBody)
+    const result = await assemble(ctx, { model: 'deepseek-flash', messages: [] })
+    expect(result.message.content).toEqual([{ type: 'text', text: 'hello' }])
+    if (responseCaptureMaxBytes === 0) expect(onResponseBody).not.toHaveBeenCalled()
+    else {
+      expect(onResponseBody).toHaveBeenCalledOnce()
+      expect(onResponseBody.mock.calls[0]?.[1]).toMatchObject({ truncated: true })
+      expect(new TextEncoder().encode(onResponseBody.mock.calls[0]?.[1].body).length).toBe(responseCaptureMaxBytes)
+    }
+  })
+
+  it('settles diagnostics when credential resolution fails before HTTP dispatch', async () => {
+    const failure = new LlmError('fixture refuses credentials', 'MISSING_CREDENTIAL')
+    const finish = vi.fn()
+    const wire = vi.fn(fetch)
+    const adapter = new PiAiAdapter({
+      profiles: () => resolveProfiles({ deepseek: {} }),
+      resolveApiKey: () => Promise.reject(failure),
+      auth: memoryAuth(),
+      createDiagnostics: () => ({ fetch: wire, chunk: vi.fn(), finish }),
+    })
+    const iterator = adapter.stream({ provider: 'deepseek', model: 'deepseek-flash', messages: [] })[Symbol.asyncIterator]()
+    await expect(iterator.next()).rejects.toBe(failure)
+    expect(wire).not.toHaveBeenCalled()
+    expect(finish).toHaveBeenCalledExactlyOnceWith('error', 'MISSING_CREDENTIAL')
+  })
   it('resolves a catalog model dynamically and uses a private endpoint', async () => {
     const server = await mockServer([{ events: textEvents }])
     const ctx = await harness(server.url)

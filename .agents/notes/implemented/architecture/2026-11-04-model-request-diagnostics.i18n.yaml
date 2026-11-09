@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-11-04-model-request-diagnostics.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-11-04-model-request-diagnostics.md
+/agent-note-model-request-progress-outside-session-history:
+  en: cbe3e9f31fa1f8e9
+  zh: 55683cdef24ae882
+/agent-note-model-request-progress-outside-session-history/problem:
+  en: d4ce4c2b6ceeddb1
+  zh: 5c8e33c4e8694669
+/agent-note-model-request-progress-outside-session-history/decision:
+  en: eba032e7bbe8adcf
+  zh: 1940174a00898afa
+/agent-note-model-request-progress-outside-session-history/alternatives-considered:
+  en: 87d3a1791d0985d9
+  zh: 9ce7fb046102bda6
+/agent-note-model-request-progress-outside-session-history/consequences:
+  en: bf0b0705bc08d7dc
+  zh: 6e235a8aed3b8e16

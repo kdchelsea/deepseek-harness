@@ -142,6 +142,26 @@ describe('document extension seat', () => {
     expect(h.read.mock.calls.map(([_sessionId, _path, range]) => range.offset)).toEqual([1, 3])
   })
 
+  it.each(['request.1.response.bin', 'REQUEST.1.RESPONSE.BIN'])(
+    'opens %s as paged plain text without duplicate viewer options', async (name) => {
+      const h = await boot()
+      h.open(name)
+      await waitFor(() => { expect(h.view.container.querySelectorAll('[data-textpreview-line]')).toHaveLength(2) })
+      expect(h.view.container.querySelector('[data-document-preview]')?.getAttribute('data-document-preview')).toBe(PLAIN_BODY_ID)
+      expect(h.read).toHaveBeenCalledOnce()
+      expect(h.bytes).not.toHaveBeenCalled()
+      expect(h.view.container.querySelector('[data-document-viewer-menu]')).toBeNull()
+    },
+  )
+
+  it('keeps unrelated binary files out of the text reader', async () => {
+    const h = await boot()
+    h.open('program.bin')
+    await waitFor(() => { expect(h.view.container.querySelector('[data-textpreview-state]')).not.toBeNull() })
+    expect(h.read).not.toHaveBeenCalled()
+    expect(h.bytes).not.toHaveBeenCalled()
+  })
+
   it('defaults to an extension, switches implementations without changing tabs, and restores a builtin on removal', async () => {
     const h = await boot()
     await act(async () => {

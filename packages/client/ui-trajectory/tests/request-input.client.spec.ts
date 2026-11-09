@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SessionEventLikeEntry } from '@deepseek-ai/dsh-api-session-controller/client'
-import type { SessionEvent, SessionId, SessionSeq } from '@deepseek-ai/dsh-session/types'
+import { AttachmentId } from '@deepseek-ai/dsh-attachment'
+import type { SessionId, SessionSeq } from '@deepseek-ai/dsh-session/types'
+import type {} from '../src/request.ts'
 import { inspectRequestInput, readRequestInput } from '../src/client/request-input.ts'
 
 function entry(seq: number, turn: number, step: number): SessionEventLikeEntry {
   return { type: 'event', event: {
-    seq, type: 'trajectory/request', time: 0, data: { turn, step, content: [] },
-  } as unknown as SessionEvent }
+    seq: seq as SessionSeq, type: 'trajectory/request', time: 0,
+    data: { turn, step, content: [{ type: 'file', attachment: { attachmentId: AttachmentId('request'), name: 'request.json', bytes: 1 } }] },
+  } }
 }
 
 afterEach(() => { vi.unstubAllGlobals() })
@@ -31,7 +34,7 @@ describe('provider request inspection', () => {
     vi.stubGlobal('fetch', fetcher)
     const signal = new AbortController().signal
     expect(await readRequestInput('s' as SessionId, 7 as SessionSeq, signal)).toEqual(body)
-    expect(fetcher).toHaveBeenCalledWith('/api/trajectory.request-body?sessionId=s&seq=7', { signal })
+    expect(fetcher).toHaveBeenCalledWith('api/trajectory.request-body?sessionId=s&seq=7', { signal })
   })
 
   it.each(['null', '[]', '"string"', '{broken'])('rejects an invalid recorded body: %s', async (body) => {

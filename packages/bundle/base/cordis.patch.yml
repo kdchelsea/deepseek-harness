@@ -96,6 +96,11 @@
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'
 
+    - id: llm-request-diagnostics
+      name: '@deepseek-ai/dsh-llm-request-diagnostics'
+      config:
+        directory: !!js dshHomePath('logs', 'llm-requests')
+
     - id: llm-retry
       name: '@deepseek-ai/dsh-llm-retry'
 

@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-11-06-incremental-response-prefixes.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-11-06-incremental-response-prefixes.md
+/agent-note-bounded-response-prefixes-survive-unfinished-requests:
+  en: 3dc7fc181b5122c4
+  zh: 497b32eaf8cc9983
+/agent-note-bounded-response-prefixes-survive-unfinished-requests/problem:
+  en: b18adecda992d575
+  zh: bd08fdc0525d0bbf
+/agent-note-bounded-response-prefixes-survive-unfinished-requests/decision:
+  en: 6076d4520536e201
+  zh: 2690dde9dd74602e
+/agent-note-bounded-response-prefixes-survive-unfinished-requests/alternatives-considered:
+  en: 51701dd2e433261d
+  zh: 23b44ed4d937bdeb
+/agent-note-bounded-response-prefixes-survive-unfinished-requests/consequences:
+  en: 63691c20046a33f7
+  zh: f7fccfc99dec2351

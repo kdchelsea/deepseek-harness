@@ -33,7 +33,9 @@ Any composition that calls a model provider — an agent loop, a session-title g
 
 Adapters can publish `llm/request-body` with the serialized provider JSON immediately before dispatch. This diagnostic event excludes HTTP headers and does not alter the request or stream. Consumers decide whether to persist it; the Trajectory Host plugin records ordinary assistant requests.
 
-Adapters publish `llm/response-body` after consumption with the original UTF-8 HTTP body, status, Content-Type, and EOF completeness. `createResponseCapture` observes bytes before JSON or SSE parsing without reading ahead. Fetch handles transport decompression; response headers other than Content-Type are excluded. Interrupted responses retain only the received prefix. Consumers may persist this diagnostic data outside model history.
+Adapters publish `llm/response-body` after consumption with the retained UTF-8 HTTP prefix, status, Content-Type, and EOF completeness. `createResponseCapture(publish, maxBytes)` bounds the total preview bytes across all replies in one generation, defaults to 16 MiB, and disables capture at zero. It observes bytes before JSON or SSE parsing without reading ahead or changing bytes delivered to the provider consumer. Cuts preserve complete UTF-8 characters. Optional `truncated: true` reports budget omission independently of `complete`, which remains an EOF fact; absent or false means no budget truncation. Fetch handles transport decompression; response headers other than Content-Type are excluded. Consumers may persist this diagnostic data outside model history.
+
+Adapters can obtain a per-invocation observer through `llm/request-diagnostics`. Its fetch wrapper records HTTP progress as the provider consumes bytes; `withRequestDiagnostics` observes normalized chunks and settles after adapter cleanup. Observers must contain logging failures and never retain request or response content. The [request diagnostics plugin](../llm-request-diagnostics/README.md) writes bounded metadata checkpoints independently of Session stream settlement; it does not change retry policy or model-visible history.
 
 ### When to choose it
 

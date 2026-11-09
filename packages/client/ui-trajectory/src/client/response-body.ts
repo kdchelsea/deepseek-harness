@@ -23,17 +23,21 @@ export async function readResponseBodies(
   for (const { event } of entries) {
     if (event.type !== 'trajectory/response' || event.data.turn !== turn || event.data.step !== step) continue
     const query = new URLSearchParams({ sessionId, seq: String(event.seq) })
-    const response = await fetch(`${RESPONSE_BODY_PATH}?${query}`, { signal })
+    const response = await fetch(`${RESPONSE_BODY_PATH.slice(1)}?${query}`, { signal })
     if (!response.ok) throw new Error('Provider response body could not be loaded')
     const value: unknown = await response.json()
     if (value === null || typeof value !== 'object'
       || !('body' in value) || typeof value.body !== 'string'
       || !('status' in value) || typeof value.status !== 'number'
       || !('contentType' in value) || typeof value.contentType !== 'string'
-      || !('complete' in value) || typeof value.complete !== 'boolean') {
+      || !('complete' in value) || typeof value.complete !== 'boolean'
+      || ('truncated' in value && typeof value.truncated !== 'boolean')) {
       throw new Error('Recorded provider response is invalid')
     }
-    result.push({ body: value.body, status: value.status, contentType: value.contentType, complete: value.complete })
+    result.push({
+      body: value.body, status: value.status, contentType: value.contentType, complete: value.complete,
+      ...('truncated' in value && typeof value.truncated === 'boolean') ? { truncated: value.truncated } : {},
+    })
   }
   return result
 }

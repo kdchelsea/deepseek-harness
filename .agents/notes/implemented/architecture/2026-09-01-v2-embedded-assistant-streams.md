@@ -73,7 +73,7 @@ Agent-loop tests pin durable-before-end ordering, interrupted visible prefixes, 
 
 Current logs, telemetry, and history pages scale by model attempts rather than token chunks while retaining exact stream evidence inside each settlement. The Client event window retains that compact evidence, but the Chat and Trajectory Assistant nodes do not expand settled streams into per-delta objects. Live presentation remains incremental and intentionally process-local.
 
-Unlike v1 top-level chunks, which the buffered persistence writer could flush before an attempt ended, v2 has no durable attempt evidence until settlement. A hard process or host loss before settlement discards the complete in-flight stream; `agent/assistant-stream` is not a write-ahead log. This tradeoff avoids a second durability owner for live output.
+Unlike v1 top-level chunks, which the buffered persistence writer could flush before an attempt ended, v2 has no durable attempt content until settlement. A hard process or host loss before settlement discards the complete in-flight stream; `agent/assistant-stream` is not a write-ahead log. This tradeoff avoids a second durability owner for live output. [Independent request diagnostics](2026-11-04-model-request-diagnostics.md) retain progress metadata before settlement, but cannot reconstruct lost stream content.
 
 One settlement can be large, and v1-to-v2 migration materializes the whole artifact plus its sequence map. The closed alpha inventory refuses unknown v1 events and undeclared references instead of guessing. Consumers that need individual chunks call `expandAssistantStream()` and must not infer durability from `agent/assistant-stream`.
 

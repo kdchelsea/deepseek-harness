@@ -949,6 +949,7 @@ function RawResponse({ request, load, t }: {
         <span className={css.sourceBlockLabel}>{t('rawResponse.label', { index: index + 1, status: response.status })} {response.contentType}</span>
       </div>
       {!response.complete && <p role="status">{t('rawResponse.incomplete')}</p>}
+      {response.truncated === true && <p role="status">{t('rawResponse.truncated')}</p>}
       <ResponseBodyView response={response} t={t} labels={jsonTreeLabels(t)} />
     </section>)}
   </div>

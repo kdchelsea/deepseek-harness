@@ -1,4 +1,4 @@
-import { createResponseCapture, type LlmResponseBody } from '@deepseek-ai/dsh-llm'
+import { createResponseCapture, withRequestDiagnostics, type LlmRequestDiagnostics, type LlmResponseBody } from '@deepseek-ai/dsh-llm'
 /**
  * Generic pi-ai-backed implementation of the Harness LLM seam.
  *
@@ -127,6 +127,8 @@ export interface PiAiAdapterOptions {
   onRequestBody?: (options: GenerateOptions, body: string) => void | Promise<void>
   /** Observe raw HTTP response bodies after consumption, including interrupted prefixes. */
   onResponseBody?: (options: GenerateOptions, response: LlmResponseBody) => void | Promise<void>
+  /** Create an observer at call consumption; omission leaves diagnostics disabled. */
+  createDiagnostics?: (options: GenerateOptions) => LlmRequestDiagnostics | undefined
   /** Resolve the optional durable attachment service at request time. */
   resolveAttachments?: () => AttachmentStore | undefined
   /** Bridge one attachment reference into the current model-tool execution world. */
@@ -409,6 +411,15 @@ export class PiAiAdapter extends LlmAdapter {
     options: GenerateOptions,
     snapshot: PiAiSnapshot,
   ): AsyncIterable<StreamChunk> {
+    const diagnostics = this.config.createDiagnostics?.(options)
+    yield* withRequestDiagnostics(options, diagnostics, this.generate(options, snapshot, diagnostics))
+  }
+
+  private async * generate(
+    options: GenerateOptions,
+    snapshot: PiAiSnapshot,
+    diagnostics: LlmRequestDiagnostics | undefined,
+  ): AsyncIterable<StreamChunk> {
     if (options.stop !== undefined) {
       throw new LlmError('llm-pi-ai does not support GenerateOptions.stop', 'UNSUPPORTED_OPTION')
     }
@@ -436,7 +447,7 @@ export class PiAiAdapter extends LlmAdapter {
     const apiKey = await this.config.resolveApiKey(options.provider, profile)
 
     const capture = createResponseCapture(this.config.onResponseBody === undefined
-      ? undefined : body => this.config.onResponseBody?.(options, body))
+      ? undefined : body => this.config.onResponseBody?.(options, body), profile.responseCaptureMaxBytes)
     const consumer = new AbortController()
     const upstream = options.signal === undefined
       ? consumer.signal
@@ -473,9 +484,9 @@ export class PiAiAdapter extends LlmAdapter {
         ...options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens },
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
         signal: watchdog.signal,
-        ...this.config.onResponseBody !== undefined && FETCH_CAPTURE_APIS.has(model.api)
+        ...(this.config.onResponseBody !== undefined || diagnostics !== undefined) && FETCH_CAPTURE_APIS.has(model.api)
           ? { fetch: async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
-            capture.wrap(await fetch(input, init)) }
+            capture.wrap(await (diagnostics?.fetch ?? fetch)(input, init)) }
           : {},
         headers: requestHeaders(profile.headers, options, model.baseUrl, this.config.prepareHeaders),
         onPayload: async (payload) => {

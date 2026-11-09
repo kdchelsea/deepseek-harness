@@ -45,8 +45,14 @@
   en: 42bc50394b070e96
   zh: 007caa743ec3c790
 /llm-streaming/pi-ai-request-headers:
-  en: 8c140f9c5a799f01
-  zh: f66b895594247e92
+  en: 183d00d913b85be0
+  zh: 46e7e26ed2491afd
+/llm-streaming/request-diagnostics:
+  en: 20862c07e37da834
+  zh: 493da399ed11cb61
+/llm-streaming/response-body-capture:
+  en: 26b50bc2ca0d3a8c
+  zh: 4dd64eb966c175f7
 /llm-streaming/service-and-provider-contracts:
   en: 8dc79d4cc82824c2
   zh: 3ebabd3a117ad717

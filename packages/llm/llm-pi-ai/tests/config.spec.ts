@@ -107,3 +107,19 @@ describe('request image policy bounds', () => {
     }).toThrow(message)
   })
 })
+
+
+describe('response preview budget', () => {
+  it('defaults to 16 MiB and accepts disabled or explicit limits', () => {
+    expect(resolveProfiles({ deepseek: {} }).get('deepseek')?.responseCaptureMaxBytes).toBe(16 * 1024 * 1024)
+    for (const responseCaptureMaxBytes of [0, 1, 1024]) {
+      expect(routeWith({ responseCaptureMaxBytes })).not.toThrow()
+      expect(resolveProfiles({ deepseek: { responseCaptureMaxBytes } }).get('deepseek')?.responseCaptureMaxBytes).toBe(responseCaptureMaxBytes)
+    }
+  })
+
+  it.each([-1, 1.5, Infinity, NaN, Number.MAX_SAFE_INTEGER + 1])('rejects invalid budget %s at config parsing and resolution', (responseCaptureMaxBytes) => {
+    expect(routeWith({ responseCaptureMaxBytes })).toThrow()
+    expect(() => resolveProfiles({ deepseek: { responseCaptureMaxBytes } })).toThrow('responseCaptureMaxBytes')
+  })
+})

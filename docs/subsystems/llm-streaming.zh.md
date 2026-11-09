@@ -870,6 +870,16 @@ interface LlmCallConfigAdapterDefaults {
 
 `PiAiRequestHeaderContext` 包含已准备调用的 provider、model、解析后的模型 `baseURL`，以及可选 Session id 和辅助用途。它不可变且不含消息或认证字段，与本次请求独有的 `Headers` 一起传入同步的 `llm-pi-ai/request-headers` waterfall。[适配器的请求头文档](../../packages/llm/llm-pi-ai/README.zh.md#request-headers)定义贡献的所有权、应用标识的优先级与失败行为。此扩展点仅适用于 pi-ai 推理请求。
 
+<a id="llmrequestdiagnostics"></a>
+
+## 请求诊断
+
+`LlmRequestDiagnostics` 是通过同步 `llm/request-diagnostics` waterfall 获取的单次调用观察器。其 `fetch` 保留 HTTP 输入和由消费者驱动的正文读取；`chunk` 观察规范化输出但不保留正文；`finish` 使用 `completed`、`error`、`aborted` 或 `consumer-stopped` 以及可选机器错误码结束观察。实现必须隔离日志失败并保证结束操作幂等。`withRequestDiagnostics` 保留迭代器值、错误和清理行为。[诊断插件](../../packages/llm/llm-request-diagnostics/README.zh.md) 负责独立文件格式、检查点频率和保留策略；这些观察结果不是 Session 事件或模型输入。
+
+## 响应正文捕获
+
+`LlmResponseBody` 携带解码后的 HTTP 响应前缀及状态元数据。`complete` 记录传输 EOF，与表示捕获预算截断的可选字段 `truncated` 独立；旧记录缺少 `truncated` 不代表应用了新的捕获上限。`createResponseCapture` 为调用内多个响应保留共享字节预算下的预览，并在收尾时发布。提供方配置负责预览字节上限；零关闭预览。该上限不限制交付给模型适配器的字节。[请求诊断插件](../../packages/llm/llm-request-diagnostics/README.zh.md) 独立地在收尾前写入已消费响应前缀，使用私有文件、调用内共享磁盘预算及明确的不完整／错误状态。这些原始前缀用于诊断，不会把部分助手输出加入模型历史。
+
 ## 服务与提供方约定
 
 `LlmAdapter` 是提供方约定：创建子类、实现 `stream()`，再用 `ctx.llm.registerAdapter(providers, adapter)` 注册一个适配器实例。`GenerateOptions.provider` 选择已注册适配器；`GenerateOptions.model` 会传给该适配器，无需在生命周期启动时注册。重复提供方路由会原子失败。可选的 `providerRetryPolicy()` 会按路由捕获并填入 normal 默认值，`providerInfo()` 与异步 `listModels()` 方法则为 `LlmRuntime.listProviders()` / `listModels()` 提供分离的 selector 元数据。该目录仅供参考，不是请求白名单：适配器仍是权威，并可接受未列出的模型 id。单次异步 `resolveModel()` 查询返回确切模型身份，以及可选的对正确性敏感的上下文容量、适配器配置的 `defaultMaxTokens`、由模型持有的有序推理强度 ID 和可选的部署默认值；字段缺失表示元数据不可用或保留提供方持有的行为，而不表示目录成员关系无效。解析器会接收可选的取消信号，并且必须在信号中止后迅速完成结算。`LlmRuntime.resolveModelInfo()` 会校验聚合结果并返回分离值。在最终适配器边界，`resolveCallConfig()` 仅在 `maxTokens` 缺失时填入输出默认值，并校验和填入推理强度，因此直接调用也无法绕过任何一项已配置行为；直接分派会在等待解析前捕获一项适配器注册。agent loop 则使用 `prepareCall()`，使模型解析、请求头持久记录和分派全程使用同一项注册，保留来自同一次查询的分离上下文元数据，并报告适配器填入的配置字段。适配器查找发生在 `llm/stream` waterfall 的终端 continuation，因此 listener 可以在查找前短路调用，或路由一个可变的一次性请求。AgentLoop 在外层 waterfall 返回流句柄时观察到一次请求尝试；这个有限边界不能证明惰性终端适配器已构造完成或开始提供方 I/O。`block-start` / `block-end` 的 `index` 关联与 assembler 共同意味着适配器只需 emit 格式正确的分片——块重组不是每个适配器各自的问题。`ctx.llm.stream()` 与 `llm/stream` waterfall 在一个轮次中的位置见 [architecture.md](../architecture.zh.md#turn-flow)。
@@ -1253,6 +1263,27 @@ Observe the serialized provider body immediately before dispatch. Headers are ex
 ```
 
 Source: [`packages/llm/llm/src/types.ts`](../../packages/llm/llm/src/types.ts)
+
+<a id="llmrequest-diagnostics--waterfall"></a>
+
+#### `llm/request-diagnostics` — waterfall
+
+Create a progress and bounded response observer for one adapter invocation, including retries. Listeners must call next(); the default supplies no observer. Observation must not change model output or propagate logging failures into the call.
+
+```ts cordis-catalog
+/**
+ * Create a progress and bounded response observer for one adapter invocation, including retries.
+ * Listeners must call next(); the default supplies no observer. Observation
+ * must not change model output or propagate logging failures into the call.
+ * @mode waterfall
+ * @param options - request attribution; message and tool content must not be logged.
+ * @param next - delegate to the next observer provider.
+ * @returns observer owned by this invocation, or undefined when disabled.
+ */
+'llm/request-diagnostics'(options: GenerateOptions<string>, next: () => LlmRequestDiagnostics | undefined): LlmRequestDiagnostics | undefined
+```
+
+Source: [`packages/llm/llm/src/request-diagnostics.ts`](../../packages/llm/llm/src/request-diagnostics.ts)
 
 <a id="llmresponse-body--parallel"></a>
 

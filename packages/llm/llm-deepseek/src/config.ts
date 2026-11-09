@@ -4,7 +4,7 @@ import type { Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { isVolatile } from '@deepseek-ai/cosmokit'
 import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
-import { resolveRetryPolicy, RetryPolicySchema } from '@deepseek-ai/dsh-llm'
+import { DEFAULT_RESPONSE_CAPTURE_MAX_BYTES, resolveRetryPolicy, RetryPolicySchema } from '@deepseek-ai/dsh-llm'
 import type { ModelModality, RetryPolicyConfig } from '@deepseek-ai/dsh-llm'
 import type { LaunchEnvironmentSnapshot } from '@deepseek-ai/dsh-launch-environment'
 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
@@ -31,6 +31,8 @@ export interface Config {
   models: Volatile<DeepSeekCatalogModel[]>
   /** Maximum provider idle time while one stream read is outstanding (default five minutes). */
   streamIdleTimeoutMs: Volatile<number>
+  /** Aggregate response-preview bytes per generation (default 16 MiB); zero disables capture. */
+  responseCaptureMaxBytes: Volatile<number>
   /** Maximum accumulated file-referenced image bytes per chat request (default 128 MiB). */
   maxRequestFilesBytes: Volatile<number>
   /** Maximum accumulated base64 image payload after Files API fallback (default 20 MiB). */
@@ -97,6 +99,7 @@ export const deepSeekConfigFields = {
   defaultContextWindow: z.number().step(1).min(1).default(DEFAULT_CONTEXT_WINDOW).volatile(),
   models: z.array(catalogModel).default(DEFAULT_MODELS).volatile(),
   streamIdleTimeoutMs: z.number().min(Number.MIN_VALUE).max(MAX_TIMER_DELAY_MS).default(DEFAULT_STREAM_IDLE_TIMEOUT_MS).volatile(),
+  responseCaptureMaxBytes: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(DEFAULT_RESPONSE_CAPTURE_MAX_BYTES).volatile(),
   maxRequestFilesBytes: z.number().step(1).min(1).default(DEFAULT_MAX_REQUEST_FILES_BYTES).volatile(),
   maxInlineRequestImageBytes: z.number().step(1).min(1).default(DEFAULT_MAX_INLINE_REQUEST_IMAGE_BYTES).volatile(),
   maxImagesPerRequest: z.number().step(1).min(1).default(DEFAULT_MAX_IMAGES_PER_REQUEST).volatile(),
@@ -248,6 +251,10 @@ export function resolveAdapterOptions(config: Options, environment?: LaunchEnvir
       `llm-deepseek: streamIdleTimeoutMs must be a positive finite number no greater than ${MAX_TIMER_DELAY_MS}`,
     )
   }
+  const responseCaptureMaxBytes = config.responseCaptureMaxBytes ?? DEFAULT_RESPONSE_CAPTURE_MAX_BYTES
+  if (!Number.isSafeInteger(responseCaptureMaxBytes) || responseCaptureMaxBytes < 0) {
+    throw new Error('llm-deepseek: responseCaptureMaxBytes must be a non-negative safe integer')
+  }
   const maxRequestFilesBytes = config.maxRequestFilesBytes ?? DEFAULT_MAX_REQUEST_FILES_BYTES
   if (!Number.isSafeInteger(maxRequestFilesBytes) || maxRequestFilesBytes <= 0) {
     throw new Error('llm-deepseek: maxRequestFilesBytes must be a positive safe integer')
@@ -323,6 +330,7 @@ export function resolveAdapterOptions(config: Options, environment?: LaunchEnvir
     defaultContextWindow: config.defaultContextWindow ?? DEFAULT_CONTEXT_WINDOW,
     models: resolveModels(config.models),
     streamIdleTimeoutMs,
+    responseCaptureMaxBytes,
     maxRequestFilesBytes,
     maxInlineRequestImageBytes,
     maxImagesPerRequest,

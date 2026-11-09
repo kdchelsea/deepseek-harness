@@ -52,6 +52,8 @@ Web 和桌面端均通过代码工作工具选择 HTML 预览策略。渲染器�
 
 两种 HTML 模式均将 iframe 初始名称设为 `dsh-sidebar-html-<tab-id>`，供 Desktop 快捷键路由关联目标。这种关联不授予预览访问父文档的权限。
 
+以 `.response.bin` 结尾的文件选择分页纯文本查看器，使 UTF-8 SSE 响应诊断可以直接通过文件链接打开。文本读取器仍拒绝含 NUL 或编码无效的内容，其他 `.bin` 文件仍不支持预览。读到文件当前末尾不代表底层模型响应已经完成。
+
 正文通过 `useTabInfo().tab` 读取记录、导航和生命周期。`useResource<'file'>(tab.contentId)` 提供元数据，普通 inject 回调提供内容读取：
 
 - 资源快照仅包含 `status`、`value` 和 `failure`；`value` 是 `WorkspaceFileStat` 元数据。提供方可用后，内容读取无需等待首个元数据帧。观察失败优先于 Preview 的变更提示显示；元数据不可用时保留已加载内容。

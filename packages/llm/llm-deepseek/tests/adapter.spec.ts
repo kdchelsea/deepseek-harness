@@ -65,6 +65,21 @@ declare module '@deepseek-ai/dsh-llm' {
 }
 
 describe('direct Messages HTTP', () => {
+  it('observes HTTP and parsed progress without changing the Messages result', async () => {
+    const http = await endpoint()
+    const wire = vi.fn((input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => fetch(input, init))
+    const chunk = vi.fn()
+    const finish = vi.fn()
+    const createDiagnostics = vi.fn(() => ({ fetch: wire, chunk, finish }))
+    const llm = adapter({ baseURL: http.url }, { createDiagnostics })
+    const result = await assemble(llm.stream(options()))
+    expect(result.message.content).toEqual([{ type: 'text', text: 'Hello 世界' }])
+    expect(createDiagnostics).toHaveBeenCalledOnce()
+    expect(wire).toHaveBeenCalledOnce()
+    expect(chunk).toHaveBeenCalledWith(expect.objectContaining({ type: 'finish', reason: { kind: 'stop' } }))
+    expect(finish).toHaveBeenCalledExactlyOnceWith('completed', undefined)
+  })
+
   it('continues through Messages with assistant blocks in saved user history', async () => {
     const http = await endpoint()
     const notice = createUserMessage({ source: { kind: 'saved-notice' }, content: [
@@ -126,6 +141,18 @@ describe('direct Messages HTTP', () => {
     expect(http.requests[1]?.headers).not.toHaveProperty('anthropic-beta')
   })
 
+  it.each([0, 8])('honors responseCaptureMaxBytes=%i without shortening model output', async (responseCaptureMaxBytes) => {
+    const http = await endpoint()
+    const onResponseBody = vi.fn()
+    const llm = adapter({ baseURL: http.url, responseCaptureMaxBytes }, { onResponseBody })
+    const response = await assemble(llm.stream(options()))
+    expect(response.message.content).toEqual([{ type: 'text', text: 'Hello 世界' }])
+    if (responseCaptureMaxBytes === 0) expect(onResponseBody).not.toHaveBeenCalled()
+    else expect(onResponseBody.mock.calls[0]?.[1]).toMatchObject({
+      body: sse(textEvents).slice(0, responseCaptureMaxBytes), truncated: true,
+    })
+  })
+
   it('uses the Messages endpoint, authentication, attribution and final usage', async () => {
     const http = await endpoint()
     const onRequestBody = vi.fn()
@@ -144,8 +171,9 @@ describe('direct Messages HTTP', () => {
     expect(onRequestBody).toHaveBeenCalledOnce()
     expect(JSON.parse(onRequestBody.mock.calls[0]![1] as string)).toEqual(http.requests[0]!.body)
     expect(onResponseBody).toHaveBeenCalledOnce()
+    // The SDK can stop at message_stop before transport EOF; response-capture tests own EOF observation.
     expect(onResponseBody.mock.calls[0]![1]).toMatchObject({
-      status: 200, contentType: 'text/event-stream', body: sse(textEvents), complete: true,
+      status: 200, contentType: 'text/event-stream', body: sse(textEvents),
     })
     expect(llm.providerInfo('deepseek-official')).toEqual({ id: 'deepseek-official', name: 'DeepSeek' })
     expect(await llm.listModels('deepseek-official')).toEqual([])
